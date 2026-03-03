@@ -56,7 +56,7 @@ jobs:
         version: '6.9.3'
         target: 'desktop'
         arch: 'win64_mingw'
-        modules: 'qtmultimedia qtserialport qtprintsupport qtwebsockets qtsql qtaxcontainer qtaxserver'
+        modules: 'qtmultimedia qtserialport printsupport qtwebsockets sql axcontainer axserver'
         cache: true
         dir: 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/qt693'
         # find_package (Qt6 COMPONENTS Widgets SerialPort Multimedia PrintSupport Sql LinguistTools WebSockets REQUIRED)
