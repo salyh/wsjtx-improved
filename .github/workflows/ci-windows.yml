@@ -28,8 +28,7 @@ jobs:
         update: true
         cache: true
         install: >-
-          git python base-devel make unzip zip tar mingw-w64-x86_64-gcc-fortran 
-        # mingw-w64-x86_64-qt6-activeqt
+          git python base-devel make unzip zip tar mingw-w64-x86_64-gcc-fortran mingw-w64-x86_64-qt6-activeqt
         pacboy: >-
           toolchain:p
           autotools:p
@@ -56,7 +55,7 @@ jobs:
         version: '6.9.3'
         target: 'desktop'
         arch: 'win64_mingw'
-        modules: 'qtmultimedia qtserialport printsupport qtwebsockets sql axcontainer axserver'
+        modules: 'qtmultimedia qtserialport qtwebsockets'
         cache: true
         dir: 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/qt693'
         # find_package (Qt6 COMPONENTS Widgets SerialPort Multimedia PrintSupport Sql LinguistTools WebSockets REQUIRED)
