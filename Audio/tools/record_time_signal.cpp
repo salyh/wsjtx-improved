@@ -12,9 +12,10 @@
 #include <QStringList>
 #include <QFileInfo>
 #include <QAudioFormat>
-#include <QAudioDeviceInfo>
-#include <QAudioInput>
-#include <QAudioOutput>
+#include <QAudioDevice>
+#include <QMediaDevices>
+#include <QAudioSource>
+#include <QAudioSink>
 #include <QTimer>
 #include <QDateTime>
 #include <QDebug>
@@ -33,18 +34,19 @@ class Record final
   Q_OBJECT;
 
 public:
-  Record (int start, int duration, QAudioDeviceInfo const& source_device, BWFFile * output, int notify_interval, int buffer_size)
+//  Record (int start, int duration, QAudioDevice const& source_device, BWFFile * output, int notify_interval, int buffer_size)
+  Record (int start, int duration, QAudioDevice const& source_device, BWFFile * output, int buffer_size)
     : source_ {source_device, output->format ()}
-    , notify_interval_ {notify_interval}
+//    , notify_interval_ {notify_interval}
     , output_ {output}
     , duration_ {duration}
   {
     if (buffer_size) source_.setBufferSize (output_->format ().bytesForFrames (buffer_size));
-    if (notify_interval_)
-      {
-        source_.setNotifyInterval (notify_interval);
-        connect (&source_, &QAudioInput::notify, this, &Record::notify);
-      }
+//    if (notify_interval_)
+//      {
+//        source_.setNotifyInterval (notify_interval);
+//        connect (&source_, &QAudioInput::notify, this, &Record::notify);
+//      }
 
     if (start == -1)
       {
@@ -74,7 +76,8 @@ private:
 #endif
       ;
     source_.start (output_);
-    if (!notify_interval_) QTimer::singleShot (duration_ * 1000, Qt::PreciseTimer, this, &Record::stop_recording);
+//    if (!notify_interval_) QTimer::singleShot (duration_ * 1000, Qt::PreciseTimer, this, &Record::stop_recording);
+    QTimer::singleShot (duration_ * 1000, Qt::PreciseTimer, this, &Record::stop_recording);
     qtout << QString {"buffer size used is: %1"}.arg (source_.bufferSize ())
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
                                                    << Qt::endl
@@ -112,8 +115,8 @@ private:
     Q_EMIT done ();
   }
 
-  QAudioInput source_;
-  int notify_interval_;
+  QAudioSource source_;
+//  int notify_interval_ {0};
   BWFFile * output_;
   int duration_;
 };
@@ -124,19 +127,20 @@ class Playback final
   Q_OBJECT;
 
 public:
-  Playback (int start, BWFFile * input, QAudioDeviceInfo const& sink_device, int notify_interval, int buffer_size, QString const& category)
+//  Playback (int start, BWFFile * input, QAudioDevice const& sink_device, int notify_interval, int buffer_size, QString const& category)
+  Playback (int start, BWFFile * input, QAudioDevice const& sink_device, int buffer_size)
     : input_ {input}
     , sink_ {sink_device, input->format ()}
-    , notify_interval_ {notify_interval}
+//    , notify_interval_ {notify_interval}
   {
     if (buffer_size) sink_.setBufferSize (input_->format ().bytesForFrames (buffer_size));
-    if (category.size ()) sink_.setCategory (category);
-    if (notify_interval_)
-      {
-        sink_.setNotifyInterval (notify_interval);
-        connect (&sink_, &QAudioOutput::notify, this, &Playback::notify);
-      }
-    connect (&sink_, &QAudioOutput::stateChanged, this, &Playback::sink_state_changed);
+//    if (category.size ()) sink_.setCategory (category);
+//    if (notify_interval_)
+//      {
+//        sink_.setNotifyInterval (notify_interval);
+//        connect (&sink_, &QAudioOutput::notify, this, &Playback::notify);
+//      }
+    connect (&sink_, &QAudioSink::stateChanged, this, &Playback::sink_state_changed);
     if (start == -1)
       {
         start_playback ();
@@ -203,11 +207,11 @@ private:
         stop_playback ();
         qtout << "\naudio output state changed to idle\n";
         break;
-#if QT_VERSION >= QT_VERSION_CHECK (5, 10, 0)
-      case QAudio::InterruptedState:
-        qtout << "\naudio output state changed to interrupted\n";
-        break;
-#endif
+//#if QT_VERSION >= QT_VERSION_CHECK (5, 10, 0)
+//      case QAudio::InterruptedState:
+//        qtout << "\naudio output state changed to interrupted\n";
+//        break;
+//#endif
       }
   }
 
@@ -227,8 +231,8 @@ private:
   }
 
   BWFFile * input_;
-  QAudioOutput sink_;
-  int notify_interval_;
+  QAudioSink sink_;
+//  int notify_interval_ {0};
 };
 
 #include "record_time_signal.moc"
@@ -285,25 +289,25 @@ int main(int argc, char *argv[])
           {{"P", "playback-device-number"},
               app.translate ("main", "Playback to <device-number>"),
               app.translate ("main", "device-number")},
-          {{"C", "category"},
-              app.translate ("main", "Playback <category-name>"),
-              app.translate ("main", "category-name")},
-          {{"n", "notify-interval"},
-              app.translate ("main", "use notify signals every <interval> milliseconds, zero to use a timer"),
-              app.translate ("main", "interval")},
+//          {{"C", "category"},
+//              app.translate ("main", "Playback <category-name>"),
+//              app.translate ("main", "category-name")},
+//          {{"n", "notify-interval"},
+//              app.translate ("main", "use notify signals every <interval> milliseconds, zero to use a timer"),
+//              app.translate ("main", "interval")},
           {{"b", "buffer-size"},
               app.translate ("main", "audio buffer size <frames>"),
               app.translate ("main", "frames")},
         });
       parser.process (app);
 
-      auto input_devices = QAudioDeviceInfo::availableDevices (QAudio::AudioInput);      
+      auto input_devices = QMediaDevices::audioInputs();      
       if (parser.isSet ("I"))
         {
           int n {0};
           for (auto const& device : input_devices)
             {
-              qtout << ++n << " - [" << device.deviceName () << ']'
+              qtout << ++n << " - [" << device.id () << ']'
 #if QT_VERSION >= QT_VERSION_CHECK (5, 15, 0)
                     << Qt::endl
 #else
@@ -314,13 +318,13 @@ int main(int argc, char *argv[])
           return 0;
         }
 
-      auto output_devices = QAudioDeviceInfo::availableDevices (QAudio::AudioOutput);      
+      auto output_devices = QMediaDevices::audioOutputs ();      
       if (parser.isSet ("O"))
         {
           int n {0};
           for (auto const& device : output_devices)
             {
-              qtout << ++n << " - [" << device.deviceName () << ']'
+              qtout << ++n << " - [" << device.id () << ']'
 #if QT_VERSION >= QT_VERSION_CHECK (5, 15, 0)
                     << Qt::endl
 #else
@@ -351,12 +355,12 @@ int main(int argc, char *argv[])
           num_channels = parser.value ("c").toInt (&ok);
           if (!ok) throw std::invalid_argument {"channel count not a number"};
         }
-      int notify_interval {0};
-      if (parser.isSet ("n"))
-        {
-          notify_interval = parser.value ("n").toInt (&ok);
-          if (!ok) throw std::invalid_argument {"notify interval not a number"};
-        }
+//      int notify_interval {0};
+//      if (parser.isSet ("n"))
+//        {
+//          notify_interval = parser.value ("n").toInt (&ok);
+//          if (!ok) throw std::invalid_argument {"notify interval not a number"};
+//        }
       int buffer_size {0};
       if (parser.isSet ("b"))
         {
@@ -402,11 +406,12 @@ int main(int argc, char *argv[])
 
           audio_format.setSampleRate (sample_rate);
           audio_format.setChannelCount (num_channels);
-          audio_format.setSampleSize (16);
-          audio_format.setSampleType (QAudioFormat::SignedInt);
-          audio_format.setCodec ("audio/pcm");
-
-          auto source = input_device ? input_devices[input_device - 1] : QAudioDeviceInfo::defaultInputDevice ();
+          audio_format.setSampleFormat (QAudioFormat::Int16);
+//          audio_format.setSampleSize (16);
+//          audio_format.setSampleType (QAudioFormat::SignedInt);
+//          audio_format.setCodec ("audio/pcm");
+ 
+          auto source = input_device ? input_devices[input_device - 1] : QMediaDevices::defaultAudioInput ();
           if (!source.isFormatSupported (audio_format))
             {
               qtout << "warning, requested format not supported, using nearest"
@@ -416,13 +421,14 @@ int main(int argc, char *argv[])
                     << endl
 #endif
                 ;
-              audio_format = source.nearestFormat (audio_format);
+//              audio_format = source.nearestFormat (audio_format);
             }
           BWFFile output_file {audio_format, ofi.filePath ()};
           if (!output_file.open (BWFFile::WriteOnly)) throw std::invalid_argument {QString {"cannot open output file \"%1\""}.arg (ofi.filePath ()).toStdString ()};
 
           // run the application
-          Record record {start, duration, source, &output_file, notify_interval, buffer_size};
+//          Record record {start, duration, source, &output_file, notify_interval, buffer_size};
+          Record record {start, duration, source, &output_file, buffer_size};
           QObject::connect (&record, &Record::done, &app, &QCoreApplication::quit);
           return app.exec();
         }
@@ -435,14 +441,15 @@ int main(int argc, char *argv[])
             }
           BWFFile input_file {audio_format, ifi.filePath ()};
           if (!input_file.open (BWFFile::ReadOnly)) throw std::invalid_argument {QString {"cannot open input file \"%1\""}.arg (ifi.filePath ()).toStdString ()};
-          auto sink = output_device ? output_devices[output_device - 1] : QAudioDeviceInfo::defaultOutputDevice ();
+          auto sink = output_device ? output_devices[output_device - 1] : QMediaDevices::defaultAudioOutput ();
           if (!sink.isFormatSupported (input_file.format ()))
             {
               throw std::invalid_argument {"audio output device does not support input file audio format"};
             }
 
           // run the application
-          Playback play {start, &input_file, sink, notify_interval, buffer_size, parser.value ("category")};
+//          Playback play {start, &input_file, sink, notify_interval, buffer_size, parser.value ("category")};
+          Playback play {start, &input_file, sink, buffer_size};
           QObject::connect (&play, &Playback::done, &app, &QCoreApplication::quit);
           return app.exec();
         }

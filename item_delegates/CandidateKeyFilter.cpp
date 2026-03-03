@@ -65,7 +65,11 @@ void CandidateKeyFilter::set_active_key (QModelIndex const& index)
           Q_ASSERT (index.column () == m_->referencing_key_column_);
           m_->active_key_ = index;
         }
-      invalidateFilter ();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+      beginFilterChange(); endFilterChange();
+#else
+      invalidateFilter();
+#endif
     }
 }
 

@@ -47,7 +47,7 @@ void DirectoryDelegate::paint (QPainter * painter, QStyleOptionViewItem const& o
       progress_option.rect = option.rect;
       progress_option.state = QStyle::State_Enabled;
       progress_option.direction = QApplication::layoutDirection ();
-      progress_option.fontMetrics = QApplication::fontMetrics ();
+//      progress_option.fontMetrics = QApplication::fontMetrics ();
       progress_option.text = QString::number (progress > 0 ? percent : 0) + '%';
       QApplication::style ()->drawControl (control_element, &progress_option, painter);
     }

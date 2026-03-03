@@ -66,7 +66,7 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
   LOG_INFO (QString {"locale: language: %1 script: %2 country: %3 ui-languages: %4"}
      .arg (QLocale::languageToString (locale.language ()))
      .arg (QLocale::scriptToString (locale.script ()))
-     .arg (QLocale::countryToString (locale.country ()))
+     .arg (QLocale::territoryToString (locale.territory ()))
      .arg (locale.uiLanguages ().join (", ")));
 
   // we  don't load  translators  if the  language  override is  'en',

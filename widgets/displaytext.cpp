@@ -3,11 +3,12 @@
 #include <vector>
 #include <algorithm>
 
-#include <QAudio>
 #include <QAudioOutput>
-#include <QSound>
-#include <QDir>
+#include <QMediaDevices>
+#include <QAudioDevice>
+#include <QAudioSink>
 #include <QCoreApplication>
+#include <QDir>
 #include <QTimer>
 #include <QMouseEvent>
 #include <QDateTime>
@@ -304,7 +305,7 @@ QString DisplayText::appendWorkedB4 (QString message, QString call, QString cons
     call=call.mid(0,i0);
   }
   if(call.length()<3) return message;
-  if(!call.contains(QRegExp("[0-9]|[A-Z]"))) return message;
+  if(!call.contains(QRegularExpression("[0-9]|[A-Z]"))) return message;
 
   auto const& looked_up = logBook.countries ()->lookup (call);
   logBook.match (call, currentMode, grid, looked_up, callB4, countryB4, gridB4, continentB4, CQZoneB4, ITUZoneB4);
@@ -635,12 +636,12 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
           tw=decodedText.string().mid(22).split(" ",SkipEmptyParts);
         }
           if ((tw.size () > 0 && tw[0].contains(myCall)) or decodedText.clean_string().contains("; " + myCall)) {
-            highlight_types types {Highlight::MyCall};
-            set_colours (m_config, &bg, &fg, types);
-            if (m_config->alert_MyCall()) play_MyCall = true;
+              highlight_types types {Highlight::MyCall};
+              set_colours (m_config, &bg, &fg, types);
+              if (m_config->alert_MyCall()) play_MyCall = true;
           } else {
-            highlight_types types {Highlight::Tx};
-            set_colours (m_config, &bg, &fg, types);
+              highlight_types types {Highlight::Tx};
+              set_colours (m_config, &bg, &fg, types);
           }
         }
     }
@@ -676,7 +677,7 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
               }
           }
       } else {
-         message = leftJustifyAppendage (message, "[" + distance + "]");
+          message = leftJustifyAppendage (message, "[" + distance + "]");
       }
   }
 
@@ -915,23 +916,16 @@ void DisplayText::highlight_callsign (QString const& callsign, QColor const& bg,
 
 void DisplayText::AudioAlerts()
 {
-#ifdef WIN32
-  if(m_config->alert_Enabled()) {
-        QAudioOutput info(QAudioDeviceInfo::defaultOutputDevice());
+    if(m_config->alert_Enabled()) {
+        QAudioDevice info(QMediaDevices::defaultAudioOutput());
         QString audioPath = QCoreApplication::applicationDirPath() + "/sounds" + m_config->voicesPath() + "/";
         QAudioFormat format;
-        format.setCodec("audio/pcm");
-        format.setSampleRate (48000);
-        format.setChannelCount (1);
-        format.setSampleSize (16);
-        format.setSampleType(QAudioFormat::SignedInt);
-        QAudioOutput* audio;
-        audio = new QAudioOutput(format, this);
+        format.setSampleRate(48000);
+        format.setChannelCount(1);
+        format.setSampleFormat(QAudioFormat::Int16);
+        QAudioSink* audio = new QAudioSink(format, this);
         connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-#else
-  if(m_config->alert_Enabled()) {
-        QString audioPath = QCoreApplication::applicationDirPath() + "/sounds" + m_config->voicesPath() + "/";
-#endif
+
         QFile *effect2 = new QFile(this);
         QFile *effect3 = new QFile(this);
         QFile *effect4 = new QFile(this);
@@ -956,17 +950,14 @@ void DisplayText::AudioAlerts()
         effect11->setFileName(QString("%1/%2").arg(audioPath, "Grid.wav"));
         effect12->setFileName(QString("%1/%2").arg(audioPath, "GridOnBand.wav"));
         effect13->setFileName(QString("%1/%2").arg(audioPath, "CQ.wav"));
+
         static int startIndex = 0;
         int nextStartIndex = startIndex +1;
-        switch (startIndex) {
+        switch (startIndex){
         case 0:
             if (play_MyCall) {
-#ifdef WIN32
                 effect2->open(QIODevice::ReadOnly);
                 audio->start(effect2);
-#else
-                QSound::play(audioPath + "MyCall.wav");  // for Linux and macOS
-#endif
                 play_MyCall = false;
                 alertsTimer.start (1000);
                 startIndex = nextStartIndex;
@@ -977,12 +968,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 1:
             if (play_DXCC) {
-#ifdef WIN32
                 effect3->open(QIODevice::ReadOnly);
                 audio->start(effect3);
-#else
-                QSound::play(audioPath + "DXCC.wav");  // for Linux and macOS
-#endif
                 play_DXCC = false;
                 play_DXCCOB = false;
                 alertsTimer.start (1200);
@@ -994,12 +981,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 2:
             if (play_DXCCOB && !play_DXCC) {
-#ifdef WIN32
                 effect4->open(QIODevice::ReadOnly);
                 audio->start(effect4);
-#else
-                QSound::play(audioPath + "DXCCOnBand.wav");  // for Linux and macOS
-#endif
                 play_DXCCOB = false;
                 alertsTimer.start (1800);
                 startIndex = nextStartIndex;
@@ -1010,12 +993,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 3:
             if (play_Continent) {
-#ifdef WIN32
                 effect5->open(QIODevice::ReadOnly);
                 audio->start(effect5);
-#else
-                QSound::play(audioPath + "Continent.wav");  // for Linux and macOS
-#endif
                 play_Continent = false;
                 play_ContinentOB = false;
                 play_GridOB = false;
@@ -1030,12 +1009,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 4:
             if (play_ContinentOB && !play_Continent) {
-#ifdef WIN32
                 effect6->open(QIODevice::ReadOnly);
                 audio->start(effect6);
-#else
-                QSound::play(audioPath + "ContinentOnBand.wav");  // for Linux and macOS
-#endif
                 play_ContinentOB = false;
                 play_GridOB = false;
                 play_CQZOB = false;
@@ -1049,12 +1024,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 5:
             if (play_CQZ) {
-#ifdef WIN32
                 effect7->open(QIODevice::ReadOnly);
                 audio->start(effect7);
-#else
-                QSound::play(audioPath + "CQZone.wav");  // for Linux and macOS
-#endif
                 play_CQZ = false;
                 play_CQZOB = false;
                 alertsTimer.start (1500);
@@ -1066,12 +1037,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 6:
             if (play_CQZOB && !play_CQZ) {
-#ifdef WIN32
                 effect8->open(QIODevice::ReadOnly);
                 audio->start(effect8);
-#else
-                QSound::play(audioPath + "CQZoneOnBand.wav");  // for Linux and macOS
-#endif
                 play_CQZOB = false;
                 alertsTimer.start (1800);
                 startIndex = nextStartIndex;
@@ -1082,12 +1049,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 7:
             if (play_ITUZ) {
-#ifdef WIN32
                 effect9->open(QIODevice::ReadOnly);
                 audio->start(effect9);
-#else
-                QSound::play(audioPath + "ITUZone.wav");  // for Linux and macOS
-#endif
                 play_ITUZ = false;
                 play_ITUZOB = false;
                 play_GridOB = false;
@@ -1100,12 +1063,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 8:
             if (play_ITUZOB && !(play_ITUZ)) {
-#ifdef WIN32
                 effect10->open(QIODevice::ReadOnly);
                 audio->start(effect10);
-#else
-                QSound::play(audioPath + "ITUZoneOnBand.wav");  // for Linux and macOS
-#endif
                 play_ITUZOB = false;
                 play_GridOB = false;
                 alertsTimer.start (1900);
@@ -1117,12 +1076,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 9:
             if (play_Grid) {
-#ifdef WIN32
                 effect11->open(QIODevice::ReadOnly);
                 audio->start(effect11);
-#else
-                QSound::play(audioPath + "Grid.wav");  // for Linux and macOS
-#endif
                 play_Grid = false;
                 play_GridOB = false;
                 alertsTimer.start (1000);
@@ -1134,12 +1089,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 10:
             if (play_GridOB && !play_Grid) {
-#ifdef WIN32
                 effect12->open(QIODevice::ReadOnly);
                 audio->start(effect12);
-#else
-                QSound::play(audioPath + "GridOnBand.wav");  // for Linux and macOS
-#endif
                 play_GridOB = false;
                 alertsTimer.start (1500);
                 startIndex = nextStartIndex;
@@ -1150,12 +1101,8 @@ void DisplayText::AudioAlerts()
             Q_FALLTHROUGH();
         case 11:
             if (play_CQ) {
-#ifdef WIN32
                 effect13->open(QIODevice::ReadOnly);
                 audio->start(effect13);
-#else
-                QSound::play(audioPath + "CQ.wav");  // for Linux and macOS
-#endif
                 play_CQ = false;
                 alertsTimer.start (1000);
                 nextStartIndex++;
@@ -1165,9 +1112,8 @@ void DisplayText::AudioAlerts()
             }
             Q_FALLTHROUGH();
         case 12:
-            // stop any running alerts timer, clear temp data, and restart alerts timer
+          // stop any running alerts timer, clear temp data, and restart alerts timer
             alertsTimer.stop ();
-#ifdef WIN32
             effect2->close();
             effect2->deleteLater();
             effect3->close();
@@ -1193,10 +1139,9 @@ void DisplayText::AudioAlerts()
             effect13->close();
             effect13->deleteLater();
             audio->deleteLater();  // remove QAudioSink to avoid a memory leak
-#endif
             alertsTimer.start (1250);
             startIndex = 0;
             return;
         }
-  }
+    }
 }

@@ -73,7 +73,7 @@ void FileDownload::replyComplete()
     if ("https" == redirect_url.scheme () && !QSslSocket::supportsSsl ())
     {
       Q_EMIT download_error (tr ("Network Error - SSL/TLS support not installed, cannot fetch:\n\'%1\'")
-                                              .arg (redirect_url.toDisplayString ()));
+                             .arg (redirect_url.toDisplayString ()));
       url_valid_ = false; // reset
       Q_EMIT load_finished ();
     }
@@ -171,7 +171,8 @@ void FileDownload::download(QUrl qurl)
 
   LOG_INFO(QString{"FileDownload [%1]: Starting download of %2 to %3"}.arg(user_agent_).arg(source_url_).arg(destination_filename_));
 
-  request_.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+//  request_.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+  request_.setAttribute(QNetworkRequest::RedirectPolicyAttribute, true);
   request_.setRawHeader("Accept", "*/*");
   request_.setRawHeader ("User-Agent", user_agent_.toLocal8Bit());  // Must have a UA for some sites, like country-files
 

@@ -6,7 +6,9 @@
 #define RX_SAMPLE_RATE 12000
 
 #ifdef __cplusplus
+#if (__GNUC__ < 15)
 #include <cstdbool>
+#endif
 #include <QString>
 #else
 #include <stdbool.h>

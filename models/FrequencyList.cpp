@@ -113,7 +113,7 @@ namespace
       {5357000, Modes::FT8, IARURegions::ALL, "","", QDateTime(), QDateTime(), true}, // provisional
       {5357000, Modes::FT4, IARURegions::ALL, "","", QDateTime(), QDateTime(), true}, // provisional
 
- // Band plans (all USB dial unless stated otherwise)
+      // Band plans (all USB dial unless stated otherwise)
       //
       // R1: 7040 - 7050 DM NB(<500Hz)  with 7047 - 7050 ACDS
       //     7050 - 7060 DM WB(<2700Hz) with 7050 - 7053 ACDS
@@ -232,7 +232,6 @@ namespace
       {14076000, Modes::JT65, IARURegions::ALL, "","", QDateTime(), QDateTime(), false},
       {14078000, Modes::JT9, IARURegions::ALL, "","", QDateTime(), QDateTime(), false},
       {14080000, Modes::FT4, IARURegions::ALL, "","", QDateTime(), QDateTime(), true}, // provisional
-
 
       // Band plans (all USB dial unless stated otherwise)
       //
@@ -639,12 +638,20 @@ void FrequencyList_v2_101::filter (Region region, Mode mode, bool filter_on_time
   m_->region_filter_ = region;
   m_->mode_filter_ = mode;
   m_->filter_on_time_ = filter_on_time;
-  invalidateFilter ();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    beginFilterChange(); endFilterChange();
+#else
+    invalidateFilter();
+#endif
 }
 
 void FrequencyList_v2_101::filter_refresh ()
 {
-  invalidateFilter ();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    beginFilterChange(); endFilterChange();
+#else
+    invalidateFilter();
+#endif
 }
 
 bool FrequencyList_v2_101::filterAcceptsRow (int source_row, QModelIndex const& /* parent */) const
@@ -785,7 +792,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
               break;
 
             case Qt::TextAlignmentRole:
-              item = Qt::AlignHCenter + Qt::AlignVCenter;
+              item = static_cast<QVariant>(Qt::AlignHCenter | Qt::AlignVCenter);
               break;
             }
           break;
@@ -806,7 +813,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
               break;
 
             case Qt::TextAlignmentRole:
-              item = Qt::AlignHCenter + Qt::AlignVCenter;
+              item = static_cast<QVariant>(Qt::AlignHCenter | Qt::AlignVCenter);
               break;
             }
           break;
@@ -834,7 +841,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
               break;
 
             case Qt::TextAlignmentRole:
-              item = Qt::AlignRight + Qt::AlignVCenter;
+              item = static_cast<QVariant>(Qt::AlignRight | Qt::AlignVCenter);
               break;
             }
           break;
@@ -856,7 +863,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
                        Radio::pretty_frequency_MHz_string(frequency_item.frequency_)
                        + " MHz (" + (band.isEmpty() ? "OOB" : band) + ")" +
                         (((frequency_item.start_time_.isValid() && !frequency_item.start_time_.isNull()) ||
-                        (frequency_item.end_time_.isValid() && !frequency_item.end_time_.isNull())) ? " \u2502 " : "")
+                        (frequency_item.end_time_.isValid() && !frequency_item.end_time_.isNull())) ? " \u2016 " : "")
                        + desc_text;
               }
               break;
@@ -867,7 +874,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
               break;
 
             case Qt::TextAlignmentRole:
-              item = Qt::AlignRight + Qt::AlignVCenter;
+              item = static_cast<QVariant>(Qt::AlignRight | Qt::AlignVCenter);
               break;
             }
             break;
@@ -888,7 +895,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
                 break;
 
                 case Qt::TextAlignmentRole:
-                  item = Qt::AlignLeft + Qt::AlignVCenter;
+                  item = static_cast<QVariant>(Qt::AlignLeft | Qt::AlignVCenter);
                 break;
               }
             break;
@@ -909,7 +916,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
                 break;
 
                 case Qt::TextAlignmentRole:
-                  item = Qt::AlignLeft + Qt::AlignVCenter;
+                  item = static_cast<QVariant>(Qt::AlignLeft | Qt::AlignVCenter);
                 break;
               }
           break;
@@ -943,7 +950,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
                 break;
 
                 case Qt::TextAlignmentRole:
-                  item = Qt::AlignLeft + Qt::AlignVCenter;
+                  item = static_cast<QVariant>(Qt::AlignLeft | Qt::AlignVCenter);
                 break;
               }
           break;
@@ -977,7 +984,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
                 break;
 
                 case Qt::TextAlignmentRole:
-                  item = Qt::AlignLeft + Qt::AlignVCenter;
+                  item = static_cast<QVariant>(Qt::AlignLeft | Qt::AlignVCenter);
                 break;
               }
           break;
@@ -1000,7 +1007,7 @@ QVariant FrequencyList_v2_101::impl::data (QModelIndex const& index, int role) c
                 break;
 
                 case Qt::TextAlignmentRole:
-                  item = Qt::AlignHCenter + Qt::AlignVCenter;
+                  item = static_cast<QVariant>(Qt::AlignHCenter | Qt::AlignVCenter);
                 break;
 
                 case Qt::CheckStateRole:
@@ -1410,7 +1417,6 @@ FrequencyList_v2_101::FrequencyItems FrequencyList_v2_101::from_json_file(QFile 
 #endif
   return list;
 }
-
 // write JSON format to a file
 void FrequencyList_v2_101::to_json_file(QFile *output_file, QString magic_s, QString version_s,
                                                     FrequencyItems const &frequency_items)

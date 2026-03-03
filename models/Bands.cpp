@@ -177,12 +177,12 @@ QVariant Bands::data (QModelIndex const& index, int role) const
               switch (column)
                 {
                 case 0:
-                  item = Qt::AlignHCenter + Qt::AlignVCenter;
+                  item = static_cast<QVariant>(Qt::AlignHCenter | Qt::AlignVCenter);
                   break;
 
                 case 1:
                 case 2:
-                  item = Qt::AlignRight + Qt::AlignVCenter;
+                  item = static_cast<QVariant>(Qt::AlignRight | Qt::AlignVCenter);
                   break;
                 }
               break;

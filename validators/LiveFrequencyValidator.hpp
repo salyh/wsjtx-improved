@@ -2,7 +2,7 @@
 #define LIVE_FREQUENCY_VALIDATOR_HPP__
 
 #include <QObject>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 
 #include "Radio.hpp"
 #include "Configuration.hpp"
@@ -27,7 +27,7 @@ class QWidget;
 //	the supplied QAbstractItemModel.
 //
 class LiveFrequencyValidator final
-  : public QRegExpValidator
+  : public QRegularExpressionValidator
 {
   Q_OBJECT;
 

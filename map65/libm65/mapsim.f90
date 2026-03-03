@@ -3,10 +3,10 @@ program mapsim
 ! Generate simulated data for testing of MAP65
 
   parameter (NMAX=60*96000)
-  real*4 d4(4,NMAX)                   !Floating-point data
-  integer*2 id4(4,NMAX)               !i*2 data, dual polarization
-  integer*2 id2(2,NMAX)               !i*2 data, single polarization
-  complex cwave(NMAX)                 !Generated complex waveform (no noise)
+  real*4, allocatable ::  d4(:,:)                   !Floating-point data
+  integer*2, allocatable ::  id4(:,:)               !i*2 data, dual polarization
+  integer*2, allocatable ::  id2(:,:)               !i*2 data, single polarization
+  complex, allocatable ::  cwave(:)                 !Generated complex waveform (no noise)
   complex z,zx,zy
   real*8 fcenter,fsample,samfac,f,dt,twopi,phi,dphi
   logical bq65
@@ -41,6 +41,11 @@ program mapsim
        'W2CYC K3DYD EM51','W3EYE K4FYF EM52','W5GYG K6HYH EM53',   &
        'W7IYI K8JYJ EM54','W9KYK K0LYL EM55','G0MYM F1NYN JN56',   &
        'G2OYO F3PYP JN57','G4QYQ F5RYR JN58','G6SYS F7TYT JN59'/
+  
+  allocate(d4(4,NMAX))                   !Floating-point data
+  allocate(id4(4,NMAX))               !i*2 data, dual polarization
+  allocate(id2(2,NMAX))               !i*2 data, single polarization
+  allocate(cwave(NMAX))                 !Generated complex waveform (no noise)
   
   nargs=iargc()
   if(nargs.ne.12) then
@@ -186,6 +191,12 @@ program mapsim
      close(11)
   enddo
 
+  
+  deallocate(d4)
+  deallocate(id4)
+  deallocate(id2)
+  deallocate(cwave)
+
 999 end program mapsim
 
 subroutine dopspread(cwave,fspread)
@@ -193,7 +204,8 @@ subroutine dopspread(cwave,fspread)
   parameter (NMAX=60*96000)
   parameter (NFFT=NMAX,NH=NFFT/2)
   complex cwave(NMAX)
-  complex cspread(0:NMAX-1)
+  complex, allocatable ::  cspread(:)
+  allocate(cspread(0:NMAX-1))
 
   twopi=8.0*atan(1.0)
   df=96000.0/nfft
@@ -236,6 +248,6 @@ subroutine dopspread(cwave,fspread)
 !     write(14,3010) i,p,cspread(i)
 !3010 format(i8,3f12.6)
 !  enddo
-
+  deallocate(cspread)
   return
 end subroutine dopspread

@@ -1,5 +1,9 @@
 #include "CabrilloLog.hpp"
 
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 9)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include <stdexcept>
 #include <utility>
 #include <QString>

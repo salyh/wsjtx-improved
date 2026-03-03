@@ -51,7 +51,6 @@ set (libm65_FSRCS
   interleave63.f90
   iqcal.f90
   iqfix.f90
-  jt65code.f90
   k2grid.f90
   lorentzian.f90
   map65a.f90
@@ -115,6 +114,7 @@ set (libm65_CXXSRCS
 
 add_definitions (-DBIGSYM=1)
 set_source_files_properties (sec_midn.f90 PROPERTIES COMPILE_FLAGS -fno-second-underscore)
+set_source_files_properties(m65a.f90 PROPERTIES COMPILE_FLAGS "-Wno-aliasing -fallow-argument-mismatch")   
 
 set (libm65_C_and_CXXSRCS
   ${libm65_CSRCS}
@@ -128,7 +128,8 @@ set_property (SOURCE ${libm65_C_and_CXXSRCS} APPEND PROPERTY OBJECT_DEPENDS ${CM
 # build our targets
 #
 add_library (m65impl STATIC ${libm65_FSRCS} ${libm65_CSRCS} ${libm65_CXXSRCS})
-target_link_libraries (m65impl wsjt_fort wsjt_cxx Qt5::Core)
+target_link_libraries (m65impl PUBLIC Qt6::Core wsjt_fort wsjt_cxx)
+#target_link_libraries (m65impl wsjt_fort wsjt_cxx Qt6::Core)
 
 add_executable (m65 m65.f90 m65a.f90)
 target_link_libraries (m65 m65impl ${FFTW3_LIBRARIES})

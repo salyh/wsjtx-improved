@@ -15,6 +15,6 @@ namespace Radio
     // This is required to preserve v1.5 "frequencies" setting for
     // backwards compatibility, without it the setting gets trashed
     // by later versions.
-    qRegisterMetaTypeStreamOperators<Radio::Frequencies> ("Frequencies");
+//    qRegisterMetaTypeStreamOperators<Radio::Frequencies> ("Frequencies");
   }
 }

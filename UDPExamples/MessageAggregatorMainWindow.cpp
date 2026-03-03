@@ -4,6 +4,7 @@
 #include <QDateTime>
 #include <QNetworkInterface>
 #include <QSet>
+#include <QMessageBox>
 
 #include "DecodesModel.hpp"
 #include "BeaconsModel.hpp"
@@ -239,9 +240,8 @@ MessageAggregatorMainWindow::MessageAggregatorMainWindow ()
   view_menu_->addSeparator ();
 
   // connect up server
-  connect (server_, &MessageServer::error, [this] (QString const& message) {
-      QMessageBox::warning (this, QApplication::applicationName (), tr ("Network Error"), message);
-    });
+//  connect (server_, &MessageServer::error, [this] (QString const& message) {
+//      QMessageBox::warning (this, QApplication::applicationName (), tr ("Network Error"), message });
   connect (server_, &MessageServer::client_opened, this, &MessageAggregatorMainWindow::add_client);
   connect (server_, &MessageServer::client_closed, this, &MessageAggregatorMainWindow::remove_client);
   connect (server_, &MessageServer::client_closed, decodes_model_, &DecodesModel::decodes_cleared);

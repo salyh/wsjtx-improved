@@ -1,4 +1,4 @@
-get_target_property (QtCore_location Qt5::Core LOCATION)
+get_target_property (QtCore_location Qt6::Core LOCATION)
 get_filename_component (QtCore_location ${QtCore_location} PATH)
 list (APPEND fixup_library_dirs ${QtCore_location})
 
@@ -138,16 +138,70 @@ if (APPLE OR WIN32)
     set (gp_tool "objdump")	# we want MinGW tool - not MSVC (See GetPrerequisites.cmake)
   endif (WIN32)
 
-  INSTALL (CODE "
-        get_filename_component (the_path \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${WSJT_PLUGIN_DESTINATION}\" REALPATH)
-        file (GLOB_RECURSE QTPLUGINS \"\${the_path}/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
-        include (BundleUtilities)
-        set (BU_CHMOD_BUNDLE_ITEMS ON)
-        set (gp_tool ${gp_tool})
-        # canonicalize path in install context
-        get_filename_component (the_exe ${fixup_exe} REALPATH)
-        fixup_bundle (\"\${the_exe}\" \"\${QTPLUGINS}\" \"${fixup_library_dirs}\")"
-    #COMPONENT runtime
-    )
+# --- 1) Discover msys-2.0.dll (dynamic, no hard-coding) ---
+find_file(MSYS_DLL
+  NAMES msys-2.0.dll
+  PATHS
+    "${JTSDK_TOOLS_ROOT}/msys64/usr/bin"
+    $ENV{MSYS_ROOT}/usr/bin
+    $ENV{MSYS2_PATH}/usr/bin
+  NO_DEFAULT_PATH
+)
+
+if (MSYS_DLL AND NOT MSYS_DLL STREQUAL "MSYS_DLL-NOTFOUND")
+  message(STATUS "Found msys-2.0.dll at: ${MSYS_DLL}")
+else()
+  message(WARNING "msys-2.0.dll not found under JTSDK tools; MAP65 may not run without it")
+  message(STATUS "JTSDK_TOOLS_ROOT is: ${JTSDK_TOOLS_ROOT}")
+endif()
+
+# --- 2) Install msys-2.0.dll explicitly into bin (belt-and-suspenders) ---
+# This uses the discovered absolute path; no hard-coded directories.
+if (MSYS_DLL AND NOT MSYS_DLL STREQUAL "MSYS_DLL-NOTFOUND")
+  install(FILES "${MSYS_DLL}" DESTINATION ${CMAKE_INSTALL_BINDIR})
+  message(STATUS "msys-2.0.dll copied explicitly to ${CMAKE_INSTALL_BINDIR}")
+endif()
+
+# --- 3) Help fixup_bundle resolve names, and include msys bin in search dirs ---
+# Map the bare name to the discovered absolute path for get_prerequisites/verify_app
+set(GP_ITEM_GLOBAL_MAP "msys-2.0.dll=${MSYS_DLL}")
+
+# Ensure BundleUtilities searches the MSYS bin dir and the final bundle bin dir
+list(APPEND fixup_library_dirs
+  "${JTSDK_TOOLS_ROOT}/msys64/usr/bin"
+)
+
+# --- 4) Run fixup_bundle and suppress verification error on msys-2.0.dll ---
+INSTALL (CODE "
+    get_filename_component (the_path \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${WSJT_PLUGIN_DESTINATION}\" REALPATH)
+    file (GLOB_RECURSE QTPLUGINS \"\${the_path}/*${CMAKE_SHARED_LIBRARY_SUFFIX}\")
+
+    include (BundleUtilities)
+    set (BU_CHMOD_BUNDLE_ITEMS ON)
+    set (GP_ITEM_GLOBAL_MAP \"${GP_ITEM_GLOBAL_MAP}\")
+    set (gp_tool ${gp_tool})
+    get_filename_component (the_exe ${fixup_exe} REALPATH)
+
+    if (\"${MSYS_DLL}\" STREQUAL \"MSYS_DLL-NOTFOUND\" OR \"${MSYS_DLL}\" STREQUAL \"\")
+      set(extra_libs \"\")
+      message(STATUS \"Skipping msys-2.0.dll: not found\")
+    else()
+      set(extra_libs \"${MSYS_DLL}\")
+      message(STATUS \"Including msys-2.0.dll in fixup_bundle: ${MSYS_DLL}\")
+    endif()
+
+    set(ignore_items \"msys-2.0.dll\")
+    fixup_bundle (\"\${the_exe}\" \"\${QTPLUGINS};\${extra_libs}\" \"${fixup_library_dirs}\" IGNORE_ITEM \${ignore_items})
+
+    # Explicit copy fallback
+    if (EXISTS \"${MSYS_DLL}\")
+      set(_bundle_bin \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
+      if (EXISTS \"\${_bundle_bin}\")
+        file(COPY \"${MSYS_DLL}\" DESTINATION \"\${_bundle_bin}\")
+        message(STATUS \"msys-2.0.dll copied explicitly to \${_bundle_bin}\")
+      endif()
+    endif()
+"
+)
 endif (APPLE OR WIN32)
 

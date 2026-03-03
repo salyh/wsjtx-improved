@@ -597,8 +597,10 @@ int CPlotter::DF() {return m_DF;}                              // get DF
 void CPlotter::mousePressEvent(QMouseEvent *event)       //mousePressEvent
 {
   int h = (m_Size.height()-60)/2;
-  int x=event->x();
-  int y=event->y();
+  int x;
+  x = event->position().x();
+  int y;
+  y = event->position().y();
   int button=event->button();
   if(y < h+30) {                                      // Wideband waterfall
     if(button==1) {
@@ -623,8 +625,10 @@ void CPlotter::mouseDoubleClickEvent(QMouseEvent *event)  //mouse2click
 {
   if(event->button()!=1) return;       //Act only on left double-click
   int h = (m_Size.height()-60)/2;
-  int x=event->x();
-  int y=event->y();
+  int x;
+  x = event->position().x();
+  int y;
+  y = event->position().y();
   if(y < h+30) {
     m_DF=0;
     setFQSO(x,false);
@@ -767,16 +771,22 @@ void CPlotter::setLockTxRx(bool b)
 void CPlotter::mouseMoveEvent (QMouseEvent * event)
 {
   int h = m_WaterfallPixmap.height();
-  int x=event->x();
-  int y=event->y();
+  int x;
+  x = event->position().x();
+  int y;
+  y = event->position().y();
   bool lower=(y > 30+h);
   float freq=FreqfromX(x);
   float df=m_fSample/32768.0;
   int ndf=x*df + m_ZoomStartFreq;
   if(lower) {
-    QToolTip::showText(event->globalPos(),QString::number(ndf));
+    QToolTip::showText(
+        event->globalPosition().toPoint()
+        , QString::number(ndf));   
   } else {
-    QToolTip::showText(event->globalPos(),QString::number(freq,'f',3));
+    QToolTip::showText(
+        event->globalPosition().toPoint()
+        , QString::number(freq, 'f', 3));   
   }
   QWidget::mouseMoveEvent(event);
 }

@@ -53,51 +53,51 @@ void register_types ()
   item_editor_factory->registerEditor (qMetaTypeId<QDateTime> (), new QStandardItemEditorCreator<DateTimeEdit> ());
 
   // V101 Frequency list model
-  qRegisterMetaTypeStreamOperators<FrequencyList_v2_101::Item> ("Item_v2_101");
+  qRegisterMetaType<FrequencyList_v2_101::Item> ("Item_v2_101");
   QMetaType::registerConverter<FrequencyList_v2_101::Item, QString> (&FrequencyList_v2_101::Item::toString);
-  qRegisterMetaTypeStreamOperators<FrequencyList_v2_101::FrequencyItems> ("FrequencyItems_v2_101");
+  qRegisterMetaType<FrequencyList_v2_101::FrequencyItems> ("FrequencyItems_v2_101");
 
   // V100 Frequency list model
-  qRegisterMetaTypeStreamOperators<FrequencyList_v2::Item> ("Item_v2");
-  qRegisterMetaTypeStreamOperators<FrequencyList_v2::FrequencyItems> ("FrequencyItems_v2");
+  qRegisterMetaType<FrequencyList_v2::Item> ("Item_v2");
+  qRegisterMetaType<FrequencyList_v2::FrequencyItems> ("FrequencyItems_v2");
 
   // defunct old versions
-  qRegisterMetaTypeStreamOperators<FrequencyList::Item> ("Item");
-  qRegisterMetaTypeStreamOperators<FrequencyList::FrequencyItems> ("FrequencyItems");
+  qRegisterMetaType<FrequencyList::Item> ("Item");
+  qRegisterMetaType<FrequencyList::FrequencyItems> ("FrequencyItems");
 
   // Audio device
   qRegisterMetaType<AudioDevice::Channel> ("AudioDevice::Channel");
 
   // Configuration
-  qRegisterMetaTypeStreamOperators<Configuration::DataMode> ("Configuration::DataMode");
-  qRegisterMetaTypeStreamOperators<Configuration::Type2MsgGen> ("Configuration::Type2MsgGen");
+  qRegisterMetaType<Configuration::DataMode> ("Configuration::DataMode");
+  qRegisterMetaType<Configuration::Type2MsgGen> ("Configuration::Type2MsgGen");
 
   // Station details
   qRegisterMetaType<StationList::Station> ("Station");
   QMetaType::registerConverter<StationList::Station, QString> (&StationList::Station::toString);
   qRegisterMetaType<StationList::Stations> ("Stations");
-  qRegisterMetaTypeStreamOperators<StationList::Station> ("Station");
-  qRegisterMetaTypeStreamOperators<StationList::Stations> ("Stations");
+  qRegisterMetaType<StationList::Station> ("Station");
+  qRegisterMetaType<StationList::Stations> ("Stations");
 
   // Transceiver
   qRegisterMetaType<Transceiver::TransceiverState> ("Transceiver::TransceiverState");
 
   // Transceiver factory
-  qRegisterMetaTypeStreamOperators<TransceiverFactory::DataBits> ("TransceiverFactory::DataBits");
-  qRegisterMetaTypeStreamOperators<TransceiverFactory::StopBits> ("TransceiverFactory::StopBits");
-  qRegisterMetaTypeStreamOperators<TransceiverFactory::Handshake> ("TransceiverFactory::Handshake");
-  qRegisterMetaTypeStreamOperators<TransceiverFactory::PTTMethod> ("TransceiverFactory::PTTMethod");
-  qRegisterMetaTypeStreamOperators<TransceiverFactory::TXAudioSource> ("TransceiverFactory::TXAudioSource");
-  qRegisterMetaTypeStreamOperators<TransceiverFactory::SplitMode> ("TransceiverFactory::SplitMode");
+  qRegisterMetaType<TransceiverFactory::DataBits> ("TransceiverFactory::DataBits");
+  qRegisterMetaType<TransceiverFactory::StopBits> ("TransceiverFactory::StopBits");
+  qRegisterMetaType<TransceiverFactory::Handshake> ("TransceiverFactory::Handshake");
+  qRegisterMetaType<TransceiverFactory::PTTMethod> ("TransceiverFactory::PTTMethod");
+  qRegisterMetaType<TransceiverFactory::TXAudioSource> ("TransceiverFactory::TXAudioSource");
+  qRegisterMetaType<TransceiverFactory::SplitMode> ("TransceiverFactory::SplitMode");
 
   // Waterfall palette
-  qRegisterMetaTypeStreamOperators<WFPalette::Colours> ("Colours");
+  qRegisterMetaType<WFPalette::Colours> ("Colours");
 
   // IARURegions
-  qRegisterMetaTypeStreamOperators<IARURegions::Region> ("IARURegions::Region");
+  qRegisterMetaType<IARURegions::Region> ("IARURegions::Region");
 
   // DecodeHighlightingModel
-  qRegisterMetaTypeStreamOperators<DecodeHighlightingModel::HighlightInfo> ("HighlightInfo");
+  qRegisterMetaType<DecodeHighlightingModel::HighlightInfo> ("HighlightInfo");
   QMetaType::registerConverter<DecodeHighlightingModel::HighlightInfo, QString> (&DecodeHighlightingModel::HighlightInfo::toString);
-  qRegisterMetaTypeStreamOperators<DecodeHighlightingModel::HighlightItems> ("HighlightItems");
+  qRegisterMetaType<DecodeHighlightingModel::HighlightItems> ("HighlightItems");
 }

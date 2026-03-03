@@ -303,7 +303,7 @@ QVariant StationList::impl::data (QModelIndex const& index, int role) const
               break;
 
             case Qt::TextAlignmentRole:
-              item = Qt::AlignHCenter + Qt::AlignVCenter;
+              item = static_cast<QVariant>(Qt::AlignHCenter | Qt::AlignVCenter);
               break;
             }
           break;
@@ -329,7 +329,7 @@ QVariant StationList::impl::data (QModelIndex const& index, int role) const
                 break;
 
               case Qt::TextAlignmentRole:
-                item = Qt::AlignRight + Qt::AlignVCenter;
+                item = static_cast<QVariant>(Qt::AlignRight | Qt::AlignVCenter);
                 break;
               }
           }
@@ -351,7 +351,7 @@ QVariant StationList::impl::data (QModelIndex const& index, int role) const
               break;
 
             case Qt::TextAlignmentRole:
-              item = Qt::AlignLeft + Qt::AlignVCenter;
+              item = static_cast<QVariant>(Qt::AlignLeft | Qt::AlignVCenter);
               break;
             }
           break;

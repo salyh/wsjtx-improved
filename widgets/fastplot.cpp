@@ -239,7 +239,7 @@ void FPlotter::draw()                                         //draw()
 void FPlotter::mouseMoveEvent(QMouseEvent *event)
 {
   QPainter painter(&m_HorizPixmap);
-  int x=event->x();
+  int x=event->position().x();
 //  int y=event->y();
   float t=x/m_pixPerSecond;
   QString t1;
@@ -254,8 +254,8 @@ void FPlotter::mouseMoveEvent(QMouseEvent *event)
 void FPlotter::mousePressEvent(QMouseEvent *event)      //mousePressEvent
 {
   if(m_mode=="MSK144") return;
-  int x=event->x();
-  int y=event->y();
+  int x=event->position().x();
+  int y=event->position().y();
   int n=event->button();
 //  bool ctrl = (event->modifiers() & Qt::ControlModifier);
   QPainter painter(&m_HorizPixmap);

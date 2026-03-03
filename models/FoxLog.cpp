@@ -1,4 +1,9 @@
 #include "FoxLog.hpp"
+#include <QtGlobal>
+
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 9)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <stdexcept>
 #include <utility>
@@ -161,7 +166,7 @@ FoxLog::impl::impl (Configuration const * configuration)
 
 QString FoxLog::rate()
 {
-  return QString("Last 10: %1, Last 100: %2, Last 60m: %3").arg(QString::number(this->rate_last_n(10),'f',0),
+  return QString("Last_10: %1, Last_100: %2, Last_60m: %3").arg(QString::number(this->rate_last_n(10),'f',0),
                                                QString::number(this->rate_last_n(100),'f',0),
                                                QString::number(this->rate_60m()));
 }

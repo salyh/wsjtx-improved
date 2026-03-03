@@ -13,7 +13,7 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QList>
-#include <QAudioDeviceInfo>
+#include <QAudioDevice>
 #include <QStringList>
 #include <QScopedPointer>
 #include <QDir>
@@ -347,7 +347,6 @@ private slots:
   void on_reset_cabrillo_log_action_triggered ();
   void on_actionErase_wsjtx_log_adi_triggered();
   void on_actionErase_WSPR_hashtable_triggered();
-  void on_actionErase_list_of_Q65_callers_triggered();
   void on_actionExport_Cabrillo_log_triggered();
   void startTx2();
   void startP1();
@@ -453,7 +452,7 @@ private slots:
   void checkMSK144ContestType();
   void on_pbBestSP_clicked();
   void on_RoundRobin_currentTextChanged(QString text);
-  void setTxMsg(int n);
+  void  setTxMsg(int n);
   bool stdCall(QString const& w);
   void remote_configure (QString const& mode, quint32 frequency_tolerance, QString const& submode
                          , bool fast_mode, quint32 tr_period, quint32 rx_df, QString const& dx_call
@@ -470,10 +469,10 @@ private slots:
   void on_leEchoMessage_textChanged();
 
 private:
-  Q_SIGNAL void initializeAudioOutputStream (QAudioDeviceInfo,
+  Q_SIGNAL void initializeAudioOutputStream (QAudioDevice,
       unsigned channels, unsigned msBuffered) const;
   Q_SIGNAL void stopAudioOutputStream () const;
-  Q_SIGNAL void startAudioInputStream (QAudioDeviceInfo const&,
+  Q_SIGNAL void startAudioInputStream (QAudioDevice const&,
       int framesPerBuffer, AudioDevice * sink,
       unsigned downSampleFactor, AudioDevice::Channel) const;
   Q_SIGNAL void suspendAudioInputStream () const;
@@ -931,6 +930,7 @@ private:
     bool   ready2call;
   };
   QMap<QString,RecentCall> m_recentCall;   //Key = callsign, value = snr, dialFreq, audioFreq, decodeTime
+
   struct ARRL_logged
   {
     QDateTime time;
@@ -1022,6 +1022,14 @@ private:
   void useNextCall();
   void abortQSO();
   void updateRate();
+  void read_log();
+  void refreshPileupList();
+  QString userAgent();
+  void handleVerifyMsg(int status, QDateTime ts, QString callsign, QString code, unsigned int hz, QString const &response);
+  void writeFoxTxMsgs();
+#ifdef FOX_OTP
+  QString foxOTPcode();
+#endif
   void write_all(QString txRx, QString message);
   bool isWorked(int itype, QString key, float fMHz=0, QString="");
 
@@ -1070,14 +1078,6 @@ private:
   Q_SLOT void ARRL_Digi_Display();
   void ARRL_Digi_Update(DecodedText dt);
   void activeWorked(QString call, QString band);
-  void read_log();
-  void refreshPileupList();
-  QString userAgent();
-  void handleVerifyMsg(int status, QDateTime ts, QString callsign, QString code, unsigned int hz, QString const &response);
-  void writeFoxTxMsgs();
-#ifdef FOX_OTP
-  QString foxOTPcode();
-#endif
 };
 
 extern int killbyname(const char* progName);

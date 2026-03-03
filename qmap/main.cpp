@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
   // Read optional file to disable highDPI scaling
   QFile f("DisableHighDpiScaling");
-  if (!f.exists()) QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  if (f.exists()) qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
 
   // Override programs executable basename as application name.
   a.setApplicationName ("QMAP");

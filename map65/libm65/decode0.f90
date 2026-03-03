@@ -17,7 +17,7 @@ subroutine decode0(dd,ss,savg,nstandalone)
   common/decodes/ndecodes
   data neme0/-99/,mcall3b/1/
   save
-
+  
   call sec0(0,tquick)
   call timer('decode0 ',0)
   if(newdat.ne.0) then

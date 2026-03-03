@@ -420,9 +420,9 @@ void WideGraph::readPalette ()                                   //readPalette
     }
 }
 
-void WideGraph::on_paletteComboBox_activated (QString const& palette)    //palette selector
+void WideGraph::on_paletteComboBox_activated (const int palette_index)    //palette selector
 {
-  m_waterfallPalette = palette;
+  m_waterfallPalette = ui->paletteComboBox->itemText(palette_index);
   readPalette();
   replot();
 }

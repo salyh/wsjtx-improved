@@ -422,11 +422,15 @@ auto WSPRBandHopping::next_hop (bool tx_enabled) -> Hop
             {
               // build new random permutations
               m_->rx_permutation_ = target_rx_bands.values ();
-              std::random_shuffle (std::begin (m_->rx_permutation_), std::end (m_->rx_permutation_));
+              std::random_device rd;
+              std::mt19937 g(rd());
+              std::shuffle (std::begin (m_->rx_permutation_), std::end (m_->rx_permutation_), g);
+//              std::random_shuffle (std::begin (m_->rx_permutation_), std::end (m_->rx_permutation_));
               m_->tx_permutation_ = target_tx_bands.values ();
-              std::random_shuffle (std::begin (m_->tx_permutation_), std::end (m_->tx_permutation_));
-              // qDebug () << "New random Rx permutation:" << m_->rx_permutation_
-              //           << "random Tx permutation:" << m_->tx_permutation_;
+              std::shuffle (std::begin (m_->tx_permutation_), std::end (m_->tx_permutation_), g);
+//              std::random_shuffle (std::begin (m_->tx_permutation_), std::end (m_->tx_permutation_));
+             qDebug () << "New random Rx permutation:" << m_->rx_permutation_
+                       << "random Tx permutation:" << m_->tx_permutation_;
             }
           if ((tx_next && m_->tx_permutation_.size ()) || !m_->rx_permutation_.size ())
             {

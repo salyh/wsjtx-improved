@@ -1,5 +1,11 @@
 //------------------------------------------------------------------ MainWindow
 #include "mainwindow.h"
+#include <QtGlobal>
+
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 9)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include <fftw3.h>
 #include <QDir>
 #include <QSettings>
@@ -165,18 +171,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
 // Create "m_worked", a dictionary of all calls in wsjt.log
   QFile f("wsjt.log");
-  f.open(QIODevice::ReadOnly);
-  if(f.isOpen()) {
-    QTextStream in(&f);
-    QString line,t,callsign;
-    for(int i=0; i<99999; i++) {
-      line=in.readLine();
-      if(line.length()<=0) break;
-      t=line.mid(18,12);
-      callsign=t.mid(0,t.indexOf(","));
-      m_worked[callsign]=true;
-    }
-    f.close();
+  if (f.open(QFileDevice::ReadOnly)) {
+      QTextStream in(&f);
+      QString line, t, callsign;
+      for (int i = 0; i < 99999; i++) {
+          line = in.readLine();
+          if (line.length() <= 0) break;
+          t = line.mid(18, 12);
+          callsign = t.mid(0, t.indexOf(","));
+          m_worked[callsign] = true;
+      }
+      f.close();
   }
 
 // Read items for fAddComboBox
@@ -1031,7 +1036,7 @@ void MainWindow::decodeBusy(bool b)                             //decodeBusy()
 
 void MainWindow::CreateLiveCQ(QStringList cqliveText)
 {
-//return if cqliveText is empty or data were read from disk.
+  //return if cqliveText is empty or data were read from disk.
   if ((m_diskData && m_myCall.toUpper() != "W3SZ" && m_myCall.toUpper() != "DL3WDG") or (cqliveText.size() == 0)) return;
 
   QStringList cqliveFinalText;
@@ -1062,7 +1067,7 @@ void MainWindow::CreateLiveCQ(QStringList cqliveText)
         int nWords=thePieces.length();
         if(nWords==9) {
           // Handle CQ CALL messages that do not include a locator
-          if(thePieces.at(6)==NULL or thePieces.at(7)==NULL or thePieces.at(8)==NULL) continue;
+//          if(thePieces.at(6)==NULL or thePieces.at(7)==NULL or thePieces.at(8)==NULL) continue;
           theCall = thePieces.at(7);
           bool isCall = testCall(theCall);
           if(!isCall) continue;
@@ -1070,11 +1075,11 @@ void MainWindow::CreateLiveCQ(QStringList cqliveText)
           theMsg = thePieces.at(6) + " " + theCall;
           thekHz = thePieces.at(8).split(".");
           rxFreq = freqOffset + thekHz.at(1).toInt(&ok);
-        // int rxFreq = freqOffset + 100 * thekHz.at(1).toInt(&ok);
+          // int rxFreq = freqOffset + 100 * thekHz.at(1).toInt(&ok);
           if (!ok) continue;
         } else if(nWords==10) {
           // Handle CQ CALL GRID --or-- CQ XXX CALL
-          if(thePieces.at(6)==NULL or thePieces.at(7)==NULL or thePieces.at(8)==NULL or thePieces.at(9)==NULL) continue;
+//          if(thePieces.at(6)==NULL or thePieces.at(7)==NULL or thePieces.at(8)==NULL or thePieces.at(9)==NULL) continue;
           // Test for callsign at thePieces.at(7)
           theCall = thePieces.at(7);
           bool isCall = testCall(theCall);
@@ -1093,11 +1098,11 @@ void MainWindow::CreateLiveCQ(QStringList cqliveText)
           }
           thekHz = thePieces.at(9).split(".");
           rxFreq = freqOffset + thekHz.at(1).toInt(&ok);
-        // int rxFreq = freqOffset + 100 * thekHz.at(1).toInt(&ok);
+          // int rxFreq = freqOffset + 100 * thekHz.at(1).toInt(&ok);
           if (!ok) continue;
           // Handle CQ XXX CALL GRID
         } else if (nWords==11) {
-           if(thePieces.at(6)==NULL or thePieces.at(7)==NULL or thePieces.at(8)==NULL or thePieces.at(9)==NULL or thePieces.at(10)==NULL) continue;
+//          if(thePieces.at(6)==NULL or thePieces.at(7)==NULL or thePieces.at(8)==NULL or thePieces.at(9)==NULL or thePieces.at(10)==NULL) continue;
           theCall = thePieces.at(8);
           bool isCall = testCall(theCall);
           if(!isCall) continue;
@@ -1105,7 +1110,7 @@ void MainWindow::CreateLiveCQ(QStringList cqliveText)
           theMsg = thePieces.at(6) + " " + theCall + " " + theGrid;
           thekHz = thePieces.at(10).split(".");
           rxFreq = freqOffset + thekHz.at(1).toInt(&ok);
-        // int rxFreq = freqOffset + 100 * thekHz.at(1).toInt(&ok);
+          // int rxFreq = freqOffset + 100 * thekHz.at(1).toInt(&ok);
           if (!ok) continue;
         }
         else continue;
@@ -1150,34 +1155,33 @@ void MainWindow::CreateLiveCQ(QStringList cqliveText)
         thePostLine.insert(12, m_myCall.toUpper()); //myCall
         thePostLine.insert(13, "--"); //txpol
         decodeList.append(thePostLine);
-        //qDebug () << "thePostLine is: " << thePostLine;
       }
       catch (const std::exception& e) {
-          // Handle standard C++ exceptions
-          QMessageBox::critical(this, "Exception", "Exception at line 1116 MainWindow::CreateLiveCQ " + QString::fromStdString(e.what())); 
+        // Handle standard C++ exceptions
+        QMessageBox::critical(this, "Exception", "Exception at line 1116 MainWindow::CreateLiveCQ " + QString::fromStdString(e.what()));
       }
       catch (...) {
-          // Handle any other type of exception
-          QMessageBox::critical(this, "Exception", "Unknown Exception at line 1121 MainWindow::CreateLiveCQ"); 
+        // Handle any other type of exception
+        QMessageBox::critical(this, "Exception", "Unknown Exception at line 1121 MainWindow::CreateLiveCQ");
       }
+    }
   }
-}
   if(strOK) {
-  sendLiveCQData(decodeList);
+    sendLiveCQData(decodeList);
   }
 }
 
 bool MainWindow::testCall(QString w)
 {
-// Check "callsign" to see if it could be a valid standard callsign or a valid
-// compound callsign.
-// Return a logical "call ok" indicator.
+  // Check "callsign" to see if it could be a valid standard callsign or a valid
+  // compound callsign.
+  // Return a logical "call ok" indicator.
   if(w.indexOf('.') >= 0) return false;
   if(w.indexOf('+') >= 0) return false;
   if(w.indexOf('-') >= 0) return false;
   if(w.indexOf('?') >= 0) return false;
   w = w.replace('<',"");
-  w = w.replace('>',""); 
+  w = w.replace('>',"");
   int n1=w.length();
   if(n1 > 11) return false;
   //qDebug() << "Line 1186 w is: " << w << " and i0 is: " << i0 << " and n1 is: " << n1 << " and call is: " << w;
@@ -1197,36 +1201,35 @@ bool MainWindow::testCall(QString w)
   int nbc=bc.trimmed().length();
   if(nbc > 8) return false;  //Base call should have no more than 8 characters  e.g. YW18FIFA
 
-// One of first two characters (c1 or c2) must be a letter
+  // One of first two characters (c1 or c2) must be a letter
   if((!bc[0].isLetter()) && (!bc[1].isLetter())) return false;
-// Real calls don't start with Q, but we'll allow the placeholder
-// callsign QU1RK to be considered a standard call:
+  // Real calls don't start with Q, but we'll allow the placeholder
+  // callsign QU1RK to be considered a standard call:
   if(bc[0]=='Q' && bc.mid(0,5) != "QU1RK") return false;
 
-// Must have a digit in 2nd or 3rd or 4th position
+  // Must have a digit in 2nd or 3rd or 4th position
   int i1=0;
   if(bc[1].isDigit()) i1=1;
   if(bc[2].isDigit()) i1=2;
   if(bc[3].isDigit()) i1=3;
   if(i1==0) return false;
 
-// Callsign must have a suffix of 1-4 letters e.g. YW18FIFA
+  // Callsign must have a suffix of 1-4 letters e.g. YW18FIFA
   if(i1==nbc) return false;
   int n=0;
   QChar j=QChar();
   for (int i=i1+1; i<=nbc-1; ++i) {
-     j=bc[i];
-     if(j<QChar('A') || j > QChar('Z')) return false;
-     n=n+1;
+    j=bc[i];
+    if(j<QChar('A') || j > QChar('Z')) return false;
+    n=n+1;
   }
   if(n >= 1 && n <= 4) return true;
-  
-  return false;  
+
+  return false;
 }
 
 void MainWindow::sendLiveCQData(QList<QStringList>decodeList)
 {
-  if (decodeList.size() == 0) return;
   QString theUrl;
   if(m_w3szUrl) {
     theUrl = w3szUrlAddr;
@@ -1260,12 +1263,12 @@ void MainWindow::sendLiveCQData(QList<QStringList>decodeList)
 	  QObject::connect(reply, &QNetworkReply::finished, this, &MainWindow::handleReply);
     }
     catch (const std::exception& e) {
-        // Handle standard C++ exceptions
-        QMessageBox::critical(this, "Exception", "Exception at line 1165 MainWindow::sendLiveCQData " + QString::fromStdString(e.what()));   
+      // Handle standard C++ exceptions
+      QMessageBox::critical(this, "Exception", "Exception at line 1165 MainWindow::sendLiveCQData " + QString::fromStdString(e.what()));
     }
     catch (...) {
-        // Handle any other type of exception
-        QMessageBox::critical(this, "Exception", "Unknown Exception at line 1170 MainWindow::sendLiveCQData");   
+      // Handle any other type of exception
+      QMessageBox::critical(this, "Exception", "Unknown Exception at line 1170 MainWindow::sendLiveCQData");
     }
   }
 }
@@ -1280,14 +1283,14 @@ void MainWindow::handleReply()
 		qDebug() << reply->errorString();
     }
   }
-    catch (const std::exception& e) {
-        // Handle standard C++ exceptions
-        QMessageBox::critical(this, "Exception", "Exception at line 1188 MainWindow::handleReply " + QString::fromStdString(e.what()));   
-    }
-    catch (...) {
-        // Handle any other type of exception
-        QMessageBox::critical(this, "Exception", "Unknown Exception at line 1193 MainWindow::handleReply");   
-    }
+  catch (const std::exception& e) {
+    // Handle standard C++ exceptions
+    QMessageBox::critical(this, "Exception", "Exception at line 1188 MainWindow::handleReply " + QString::fromStdString(e.what()));
+  }
+  catch (...) {
+    // Handle any other type of exception
+    QMessageBox::critical(this, "Exception", "Unknown Exception at line 1193 MainWindow::handleReply");
+  }
 }
 
 

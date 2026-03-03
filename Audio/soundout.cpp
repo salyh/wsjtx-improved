@@ -1,8 +1,8 @@
 #include "soundout.h"
 
 #include <QDateTime>
-#include <QAudioDeviceInfo>
-#include <QAudioOutput>
+#include <QAudioDevice>
+#include <QAudioSink>
 #include <QSysInfo>
 #include <qmath.h>
 #include <QDebug>
@@ -25,7 +25,9 @@ bool SoundOutput::checkStream () const
         break;
 
       case QAudio::IOError:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         Q_EMIT error (tr ("An error occurred during write to the audio output device."));
+#endif
         break;
 
       case QAudio::UnderrunError:
@@ -44,7 +46,7 @@ bool SoundOutput::checkStream () const
   return result;
 }
 
-void SoundOutput::setFormat (QAudioDeviceInfo const& device, unsigned channels, int frames_buffered)
+void SoundOutput::setFormat (QAudioDevice const& device, unsigned channels, int frames_buffered)
 {
   Q_ASSERT (0 < channels && channels < 3);
   m_device = device;
@@ -57,32 +59,30 @@ void SoundOutput::restart (QIODevice * source)
   if (!m_device.isNull ())
     {
       QAudioFormat format (m_device.preferredFormat ());
-      //  qDebug () << "Preferred audio output format:" << format;
       format.setChannelCount (m_channels);
-      format.setCodec ("audio/pcm");
       format.setSampleRate (48000);
-      format.setSampleType (QAudioFormat::SignedInt);
-      format.setSampleSize (16);
-      format.setByteOrder (QAudioFormat::Endian (QSysInfo::ByteOrder));
+      format.setSampleFormat (QAudioFormat::Int16);
       if (!format.isValid ())
         {
           Q_EMIT error (tr ("Requested output audio format is not valid."));
         }
+#if QT_VERSION < QT_VERSION_CHECK(6, 7, 0)
       else if (!m_device.isFormatSupported (format))
         {
           Q_EMIT error (tr ("Requested output audio format is not supported on device."));
         }
+#endif
       else
         {
-          // qDebug () << "Selected audio output format:" << format;
-          m_stream.reset (new QAudioOutput (m_device, format));
-          checkStream ();
+          m_stream.reset (new QAudioSink (m_device, format));
+          qDebug () << "SoundOutput::restart Selected audio output format:" << m_stream -> format();
+	  checkStream ();
           m_stream->setVolume (m_volume);
-          m_stream->setNotifyInterval(1000);
+//          m_stream->setNotifyInterval(1000);
           error_ = false;
 
-          connect (m_stream.data(), &QAudioOutput::stateChanged, this, &SoundOutput::handleStateChanged);
-          connect (m_stream.data(), &QAudioOutput::notify, [this] () {checkStream ();});
+          connect (m_stream.data(), &QAudioSink::stateChanged, this, &SoundOutput::handleStateChanged);
+//          connect (m_stream.data(), &QAudioSink::notify, [this] () {checkStream ();});
 
           //      qDebug() << "A" << m_volume << m_stream->notifyInterval();
         }
@@ -104,14 +104,14 @@ void SoundOutput::restart (QIODevice * source)
   // we have to set this before every start on the stream because the
   // Windows implementation seems to forget the buffer size after a
   // stop.
-  //qDebug () << "SoundOut default buffer size (bytes):" << m_stream->bufferSize () << "period size:" << m_stream->periodSize ();
+  // qDebug () << "SoundOut default buffer size (bytes):" << m_stream->bufferSize () << "m_framesBuffered: " << m_framesBuffered;
   if (m_framesBuffered > 0)
     {
       m_stream->setBufferSize (m_stream->format().bytesForFrames (m_framesBuffered));
     }
-  m_stream->setCategory ("production");
   m_stream->start (source);
-//  LOG_DEBUG ("Selected buffer size (bytes): " << m_stream->bufferSize () << " period size: " << m_stream->periodSize ());
+//  LOG_DEBUG ("Bytes avail (bytes): " << source->bytesAvailable ());
+//  LOG_DEBUG ("Buffer size (bytes): " << m_stream->bufferSize ());
 }
 
 void SoundOutput::suspend ()
@@ -164,7 +164,7 @@ void SoundOutput::setAttenuation (qreal a)
 {
   Q_ASSERT (0. <= a && a <= 999.);
   m_volume = qPow(10.0, -a/20.0);
-  //  qDebug () << "SoundOut: attn = " << a << ", vol = " << m_volume;
+  // qDebug () << "SoundOut: attn = " << a << ", vol = " << m_volume;
   if (m_stream)
     {
       m_stream->setVolume (m_volume);
@@ -196,11 +196,11 @@ void SoundOutput::handleStateChanged (QAudio::State newState)
       Q_EMIT status (tr ("Suspended"));
       break;
 
-#if QT_VERSION >= QT_VERSION_CHECK (5, 10, 0)
-    case QAudio::InterruptedState:
-      Q_EMIT status (tr ("Interrupted"));
-      break;
-#endif
+//#if QT_VERSION >= QT_VERSION_CHECK (5, 10, 0)
+//    case QAudio::InterruptedState:
+//      Q_EMIT status (tr ("Interrupted"));
+//      break;
+//#endif
 
     case QAudio::StoppedState:
       if (!checkStream ())

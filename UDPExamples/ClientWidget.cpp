@@ -1,7 +1,12 @@
 #include "ClientWidget.hpp"
+#include <QtGlobal>
+
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 9)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <limits>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QColor>
 #include <QtWidgets>
 #include <QAction>
@@ -11,9 +16,9 @@
 namespace
 {
   //QRegExp message_alphabet {"[- A-Za-z0-9+./?]*"};
-  QRegExp message_alphabet {"[- @A-Za-z0-9+./?#<>]*"};
+  QRegularExpression message_alphabet {"[- @A-Za-z0-9+./?#<>]*"};
   QRegularExpression cq_re {"(CQ|CQDX|QRZ)[^A-Z0-9/]+"};
-  QRegExpValidator message_validator {message_alphabet};
+  QRegularExpressionValidator message_validator {message_alphabet};
   MaidenheadLocatorValidator locator_validator;
   quint32 quint32_max {std::numeric_limits<quint32>::max ()};
 

@@ -33,7 +33,7 @@ namespace
             {
             case 1:
             case 7:
-              return Qt::AlignRight + Qt::AlignVCenter;
+              return static_cast<QVariant>(Qt::AlignRight | Qt::AlignVCenter);
             default:
               break;
             }

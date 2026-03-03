@@ -1,4 +1,9 @@
 #include "logqso.h"
+#include <QtGlobal>
+
+#if QT_VERSION > QT_VERSION_CHECK(6, 6, 9)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <QLocale>
 #include <QString>
@@ -92,7 +97,7 @@ LogQSO::LogQSO(QString const& programTitle, QSettings * settings
   setWindowTitle(programTitle + " - Log QSO");
   ui->comboBoxSatellite->addItem ("", "");
   QString sat_file_location;
-  QDir dataPath {QStandardPaths::writableLocation (QStandardPaths::DataLocation)};
+  QDir dataPath {QStandardPaths::writableLocation (QStandardPaths::AppLocalDataLocation)};
   sat_file_location = dataPath.exists(sat_file_name) ? dataPath.absoluteFilePath(sat_file_name) : m_config->data_dir ().absoluteFilePath (sat_file_name);
   QFile file {sat_file_location};
   QStringList wordList;
@@ -169,7 +174,7 @@ void LogQSO::loadSettings ()
   ui->cbFreqRx->setChecked (m_settings->value ("SaveFreqRx", false).toBool ());
 
   QString comments_location;  // load the content of comments.txt file to the comments combo box
-  QDir dataPath {QStandardPaths::writableLocation (QStandardPaths::DataLocation)};
+  QDir dataPath {QStandardPaths::writableLocation (QStandardPaths::AppLocalDataLocation)};
   comments_location = dataPath.exists("comments.txt") ? dataPath.absoluteFilePath("comments.txt") : m_config->data_dir ().absoluteFilePath ("comments.txt");
   QFile file2 {comments_location};
   QTextStream stream2(&file2);
@@ -183,7 +188,7 @@ void LogQSO::loadSettings ()
   } else {
       ui->comments->addItem ("");
   }
-  if (ui->cbComments->isChecked ()) ui->comments->setItemText(ui->comments->currentIndex(), m_comments);
+  if (ui->cbComments->isChecked ()) ui->comments->setItemText (ui->comments->currentIndex(), m_comments);
 
   m_settings->endGroup ();
 }
@@ -433,7 +438,7 @@ void LogQSO::accept()
   }
   m_freqRx = ui->freqRx->text ();
   //Log this QSO to file "wsjtx.log"
-  static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx.log")};
+  static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::AppLocalDataLocation)}.absoluteFilePath ("wsjtx.log")};
   if(!f.open(QIODevice::Text | QIODevice::Append)) {
     MessageBox::warning_message (this, tr ("Log file error"),
                                  tr ("Cannot open \"%1\" for append").arg (f.fileName ()),
@@ -555,7 +560,7 @@ void LogQSO::on_addButton_clicked()
         }
       } else {
           QFile file2 {comments_location};
-         if (file2.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append)) {
+          if (file2.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append)) {
              QTextStream out(&file2);
              out << ("\n" + m_comments_temp)    // create file "comments.txt" and add a blank line
     #if QT_VERSION >= QT_VERSION_CHECK (5, 15, 0)

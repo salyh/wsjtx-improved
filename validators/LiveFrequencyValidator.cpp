@@ -7,6 +7,7 @@
 
 #include "models/Bands.hpp"
 #include "models/FrequencyList.hpp"
+#include "Configuration.hpp"
 
 #include "moc_LiveFrequencyValidator.cpp"
 
@@ -16,8 +17,8 @@ LiveFrequencyValidator::LiveFrequencyValidator (QComboBox * combo_box
                                                 , Frequency const * nominal_frequency
                                                 , bool kHz_without_k
                                                 , QWidget * parent)
-  : QRegExpValidator {
-      QRegExp {       // frequency in MHz or band
+  : QRegularExpressionValidator {
+      QRegularExpression {       // frequency in MHz or band
         bands->data (QModelIndex {}).toString () // out of band string
           + QString {R"(|((\d{0,6}(\)"}    // or up to 6 digits
           + QLocale {}.decimalPoint () // (followed by decimal separator
@@ -40,7 +41,7 @@ LiveFrequencyValidator::LiveFrequencyValidator (QComboBox * combo_box
 
 auto LiveFrequencyValidator::validate (QString& input, int& pos) const -> State
 {
-  auto state = QRegExpValidator::validate (input, pos);
+  auto state = QRegularExpressionValidator::validate (input, pos);
   // by never being Acceptable we force fixup calls on ENTER or
   // losing focus
   return Acceptable == state ? Intermediate : state;
@@ -48,7 +49,7 @@ auto LiveFrequencyValidator::validate (QString& input, int& pos) const -> State
 
 void LiveFrequencyValidator::fixup (QString& input) const
 {
-  QRegExpValidator::fixup (input);
+  QRegularExpressionValidator::fixup (input);
   if (!bands_->oob ().startsWith (input))
     {
       if (input.contains ('m', Qt::CaseSensitive))
@@ -72,8 +73,7 @@ void LiveFrequencyValidator::fixup (QString& input) const
               input = QString {};
             }
         }
-      else if ((input.contains (QChar {'k'}, Qt::CaseInsensitive)) or (kHz_without_k_ && !input.contains (QChar {'M'}, Qt::CaseSensitive)))
-        {
+      else if ((input.contains (QChar {'k'}, Qt::CaseInsensitive)) or (kHz_without_k_ && !input.contains (QChar {'M'}, Qt::CaseSensitive)))        {
           // kHz in current MHz input
           auto f = Radio::frequency (input.remove (QChar {'k'}, Qt::CaseInsensitive), 3);
           f += *nominal_frequency_ / 1000000u * 1000000u;

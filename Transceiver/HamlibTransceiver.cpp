@@ -637,9 +637,9 @@ int HamlibTransceiver::do_start ()
 
   token_t token = rig_token_lookup (m_->rig_.data (), "client");
   if (RIG_CONF_END != token)	// only set if valid for rig model
-    {
-      rig_set_conf (m_->rig_.data (), token, "WSJTX");
-    }
+  {
+    rig_set_conf (m_->rig_.data (), token, "WSJTX");
+  }
 
   m_->error_check (rig_open (m_->rig_.data ()), tr ("opening connection to rig"));
 

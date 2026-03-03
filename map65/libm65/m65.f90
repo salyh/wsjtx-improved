@@ -108,7 +108,10 @@ program m65
      mousefqso=69  !W2HRO signal
      nkhz_center=100
   endif
-
+  
+    nfa=155  !Qt6 to prevent negative indices when testing with files
+    nfb=243  !Qt6 to prevent negative indices when testing with files
+  
   call ftninit('.')
   call init_timer('timer.out')
   call timer('m65     ',0)
@@ -191,5 +194,5 @@ program m65
 1999 format('Subprocess m65 terminated normally at UTC ',a17)
      close(21)
   endif
-
+ ! deallocate(ssz5a)
 end program m65

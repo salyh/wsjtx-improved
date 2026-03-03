@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_gui_timer {new QTimer {this}}
 {
   ui->setupUi(this);
-  on_EraseButton_clicked();
+//  on_EraseButton_clicked();  //placing this here is a bug that will sometimes produce a crash on startup.
   ui->labUTC->setStyleSheet( \
         "QLabel { background-color : black; color : yellow; }");
   ui->labTol1->setStyleSheet( \
@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
   txMsgButtonGroup->addButton(ui->txrb4,4);
   txMsgButtonGroup->addButton(ui->txrb5,5);
   txMsgButtonGroup->addButton(ui->txrb6,6);
-  connect(txMsgButtonGroup,SIGNAL(buttonClicked(int)),SLOT(set_ntx(int)));
+  connect(txMsgButtonGroup, &QButtonGroup::idClicked, this, &MainWindow::set_ntx);
   connect(ui->decodedTextBrowser,SIGNAL(selectCallsign(bool)),this,
           SLOT(selectCall2(bool)));
 
@@ -131,9 +131,7 @@ MainWindow::MainWindow(QWidget *parent) :
                 QTimer::singleShot (0, this, SLOT (close ()));
               }
           });
-
-  connect(&proc_editor, SIGNAL(error(QProcess::ProcessError)),
-          this, SLOT(editor_error()));
+  connect(&proc_editor, &QProcess::errorOccurred, this, &MainWindow::editor_error);
 
   connect(m_gui_timer, &QTimer::timeout, this, &MainWindow::guiUpdate);
 
@@ -218,7 +216,7 @@ MainWindow::MainWindow(QWidget *parent) :
   }
   readSettings();		             //Restore user's setup params
   QFile lockFile(m_appDir + "/.lock"); //Create .lock so m65 will wait
-  lockFile.open(QIODevice::ReadWrite);
+  qDebug() << "File open result:" << lockFile.open(QFileDevice::ReadWrite);
   QFile quitFile(m_appDir + "/.quit");
   quitFile.remove();
   proc_m65.start(QDir::toNativeSeparators(m_appDir + "/m65"), {"-s", });
@@ -291,7 +289,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 // Create "m_worked", a dictionary of all calls in wsjt.log
   QFile f("wsjt.log");
-  f.open(QIODevice::ReadOnly);
+  qDebug() << "File open result:" << f.open(QFileDevice::ReadOnly);
   if(f.isOpen()) {
     QTextStream in(&f);
     QString line,t,callsign;
@@ -1028,7 +1026,7 @@ void MainWindow::closeEvent (QCloseEvent * e)
   if (m_gui_timer) m_gui_timer->stop ();
   m_wide_graph_window->saveSettings();
   QFile quitFile(m_appDir + "/.quit");
-  quitFile.open(QIODevice::ReadWrite);
+  qDebug() << "File open result:" << quitFile.open(QFileDevice::ReadWrite);
   QFile lockFile(m_appDir + "/.lock");
   lockFile.remove();                      // Allow m65 to terminate
 
@@ -1357,22 +1355,28 @@ void MainWindow::decode()                                       //decode()
   datcom_.ndepth=m_ndepth;
   datcom_.ndiskdat=0;
   if(m_diskData) {
-    datcom_.ndiskdat=1;
-    int i0=m_path.indexOf(".tf2");
-    if(i0<0) i0=m_path.indexOf(".iq");
-    if(i0>0) {
-      // Compute self Doppler using the filename for Date and Time
-      int nyear=m_path.mid(i0-11,2).toInt()+2000;
-      int month=m_path.mid(i0-9,2).toInt();
-      int nday=m_path.mid(i0-7,2).toInt();
-      int nhr=m_path.mid(i0-4,2).toInt();
-      int nmin=m_path.mid(i0-2,2).toInt();
-      double uth=nhr + nmin/60.0;
-      int nfreq=(int)datcom_.fcenter;
-      int ndop00;
-
-      astrosub00_(&nyear, &month, &nday, &uth, &nfreq, m_myGrid.toLatin1(),&ndop00,6);
-      datcom_.nfast=ndop00;               //Send self Doppler to decoder, via datcom
+    if(m_myGrid.trimmed().length()>=6) {
+      datcom_.ndiskdat=1;
+      int i0=m_path.indexOf(".tf2");
+      if(i0<0) i0=m_path.indexOf(".iq");
+      if(i0>0) {
+        // Compute self Doppler using the filename for Date and Time
+        int nyear=m_path.mid(i0-11,2).toInt()+2000;
+        int month=m_path.mid(i0-9,2).toInt();
+        int nday=m_path.mid(i0-7,2).toInt();
+        int nhr=m_path.mid(i0-4,2).toInt();
+        int nmin=m_path.mid(i0-2,2).toInt();
+        double uth=nhr + nmin/60.0;
+        int nfreq=(int)datcom_.fcenter;
+        int ndop00;
+        QByteArray myGridData = m_myGrid.toLatin1();
+        astrosub00_(&nyear, &month, &nday, &uth, &nfreq, myGridData.constData(),&ndop00, myGridData.size());
+        datcom_.nfast=ndop00;               //Send self Doppler to decoder, via datcom
+      }
+    }
+    else { 
+      QMessageBox::information(this,"MAP65","No 6-digit MyGrid recognized by decode()");
+      return;
     }
   }
   datcom_.neme=0;
@@ -1495,7 +1499,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
         m_widebandDecode=false;
       }
       QFile lockFile(m_appDir + "/.lock");
-      lockFile.open(QIODevice::ReadWrite);
+      qDebug() << "File open result:" << lockFile.open(QFileDevice::ReadWrite);
       if(t.indexOf("<DecodeFinished>") >= 0) {
         int ndecodes=t.mid(40,5).toInt();
         lab5->setText(QString::number(ndecodes));
@@ -1656,7 +1660,7 @@ void MainWindow::guiUpdate()
       QString t="  Tx " + m_modeTx + "   ";
       t=t.left(11);
       QFile f("map65_tx.log");
-      f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+      qDebug() << "File open result:" << f.open(QFileDevice::WriteOnly | QFileDevice::Text | QFileDevice::Append);
       QTextStream out(&f);
       out << QDateTime::currentDateTimeUtc().toString("yyyy-MMM-dd hh:mm")
           << t << QString::fromLatin1(msgsent)
@@ -1687,7 +1691,7 @@ void MainWindow::guiUpdate()
     QString t="  Tx " + m_modeTx + "   ";
     t=t.left(11);
     QFile f("map65_tx.log");
-    f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+    qDebug() << "File open result:" << f.open(QFileDevice::WriteOnly | QFileDevice::Text | QFileDevice::Append);
     QTextStream out(&f);
     out << QDateTime::currentDateTimeUtc().toString("yyyy-MMM-dd hh:mm")
         << t << QString::fromLatin1(msgsent)
@@ -2127,7 +2131,7 @@ void MainWindow::on_addButton_clicked()                       //Add button
     if (f0.exists ()) f0.remove ();
     f1.copy (old_path);         // copying as we want to preserve
                                 // symlinks
-    f1.open (QFile::WriteOnly | QFile::Text); // truncates
+    qDebug() << "File open result:" << f1.open (QFileDevice::WriteOnly | QFileDevice::Text); // truncates
     f2.seek (0);
     f1.write (f2.readAll ());   // copy contents
     f2.remove ();
@@ -2457,7 +2461,7 @@ void MainWindow::read_log()
   // Update "m_worked" by reading wsjtx.log
   m_worked.clear();                     //Start from scratch
   QFile f("wsjtx.log");
-  f.open(QIODevice::ReadOnly);
+  qDebug() << "File open result:" << f.open(QFileDevice::ReadOnly);
   if(f.isOpen()) {
     QTextStream in(&f);
     QString line,callsign;

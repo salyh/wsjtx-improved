@@ -274,7 +274,7 @@ void CPlotter::draw(float swide[], bool bScroll, bool bRed)
          .toString (m_TRperiod < 60. ? "hh:mm:ss" : "hh:mm");
       t = QString {"%1    %2"}.arg (start).arg (m_rxBand);
     }
-    QRect rect{5, -2, m_w-10, painter1.fontMetrics().ascent()};
+    QRect rect{5, 0, m_w-10, painter1.fontMetrics().ascent()};
     QRect boundingRect;
     painter1.drawText(rect, m_timestamp==2?0x0082:0x0081,t, &boundingRect);
   }
@@ -296,28 +296,27 @@ void CPlotter::draw(float swide[], bool bScroll, bool bRed)
     painter2D.drawText(x1-4,y,"73");
   }
 
-  if(bRed and m_bQ65_Sync) {      //Plot the Q65 orange (current) and red (average) sync curves
+  if(bRed and m_bQ65_Sync) {      //Plot the Q65 red/orange sync curves
     int k=0;
     int k2=0;
     std::ifstream f;
     f.open(m_redFile.toLatin1());
     if(f) {
       int x,y;
-      float freq,xdt,smin,smax,sync_avg,sync_current;
+      float freq,xdt,smin,smax,sync,sync2;
       f >> xdt >> smin >> smax;
       if(f) {
         for(int i=0; i<99999; i++) {
-          f >> freq >> sync_avg >> sync_current;
+          f >> freq >> sync >> sync2;
           if(!f or f.eof() or k>=MAX_SCREENSIZE or k2>=MAX_SCREENSIZE) break;
           x=XfromFreq(freq);
-          // Plot the red curve only if we have averaged 2 or more Rx sequences.
-          if(sync_avg > -99.0 and (smin!=0.0 or smax != 0.0)) {
-            y=m_h2*(0.9 - 0.09*gain2d*gain2d*sync_avg) - m_plot2dZero - 10;
-            LineBuf2[k2].setX(x);                            //Red sync curve
+          if(sync > -99.0 and (smin!=0.0 or smax != 0.0)) {
+            y=m_h2*(0.9 - 0.09*gain2d*sync) - m_plot2dZero - 10;
+            LineBuf2[k2].setX(x);                          //Red sync curve
             LineBuf2[k2].setY(y);
             k2++;
           }
-          y=m_h2*(0.9 - 0.09*gain2d*gain2d*sync_current) - m_plot2dZero;
+          y=m_h2*(0.9 - 0.09*gain2d*sync2) - m_plot2dZero;
           LineBuf3[k].setX(x);                            //Orange sync curve
           LineBuf3[k].setY(y);
           k++;
@@ -858,27 +857,27 @@ void CPlotter::leaveEvent(QEvent *event)
 
 void CPlotter::mouseMoveEvent (QMouseEvent * event)
 {
-  int x=event->x();
+  int x=event->position().x();
   if(x < 0) x = 0;
   if(x>m_Size.width()) x = m_Size.width();
-  if(m_freq) m_pos = event->globalPos();
+  if(m_freq) m_pos = event->globalPosition().toPoint();
   m_lastMouseX = x;
   update();
-
   event->ignore();
+
   if(m_freq) {
     if (!m_bTotalPower){
-        QToolTip::showText(event->globalPos(),QString::number(int(FreqfromX(x))));
+      QToolTip::showText(event->globalPosition().toPoint(),QString::number(int(FreqfromX(x))));
     } else {
-        int y=event->y();
-        float pdB=10.0*(m_h-y)/m_vpixperdiv + 20.0;
-        if(y<(m_h-m_h2)) {
-            QToolTip::showText(event->globalPos(),QString::number(int(FreqfromX(x))));
-        } else {
-            QString t;
-            t=t.asprintf("%4.1f dB",pdB);
-            QToolTip::showText(event->globalPos(),t);
-        }
+      int y=event->position().y();
+      float pdB=10.0*(m_h-y)/m_vpixperdiv + 20.0;
+      if(y<(m_h-m_h2)) {
+        QToolTip::showText(event->globalPosition().toPoint(),QString::number(int(FreqfromX(x))));
+      } else {
+        QString t;
+        t=t.asprintf("%4.1f dB",pdB);
+        QToolTip::showText(event->globalPosition().toPoint(),t);
+      }
     }
   }
   QWidget::mouseMoveEvent(event);
@@ -894,7 +893,7 @@ void CPlotter::mouseReleaseEvent (QMouseEvent * event)
      shift = true;
   }
   if (leftbutton) {
-    int x=event->x();
+    int x=event->position().x();
     if(x<0) x=0;
     if(x>m_Size.width()) x=m_Size.width();
     bool ctrl = (event->modifiers() & Qt::ControlModifier);
@@ -930,7 +929,7 @@ void CPlotter::mouseDoubleClickEvent (QMouseEvent * event)
     if(ctrl) n+=100;
     emit freezeDecode1(n);
   } else if (rightbutton) {
-      int x=event->x();
+      int x=event->position().x();
       if(x<0) x=0;
       if(x>m_Size.width()) x=m_Size.width();
       int newFreq = int(FreqfromX(x)+0.5);
@@ -1066,7 +1065,7 @@ void CPlotter::restartTotalPower()
 
 void CPlotter::setTimestamp(int n)
 {
-    m_timestamp=n;
+  m_timestamp=n;
 }
 
 void CPlotter::setBars(bool b)

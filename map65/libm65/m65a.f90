@@ -65,7 +65,7 @@ subroutine m65b(m65com,nbytes)
   kss=4*4*60*96000
   ksavg=kss+4*4*322*32768
   kfcenter=ksavg+4*4*32768
- call m65c(m65com(0),m65com(kss),m65com(ksavg),m65com(kfcenter))
+  call m65c(m65com(0),m65com(kss),m65com(ksavg),m65com(kfcenter))
   return
 end subroutine m65b
 

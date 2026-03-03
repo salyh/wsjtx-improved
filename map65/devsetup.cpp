@@ -17,9 +17,8 @@ DevSetup::DevSetup(QWidget *parent) :	QDialog(parent)
   QButtonGroup *buttonGroup = new QButtonGroup(this);
   buttonGroup->addButton(ui.w3szBut);
   buttonGroup->addButton(ui.otherBut);
-
-  connect(buttonGroup, SIGNAL(buttonClicked(int)), this, SLOT(onButtonClicked(int)));
-
+  
+  connect(buttonGroup, &QButtonGroup::idClicked, this, &DevSetup::onButtonClicked);
 }
 
 DevSetup::~DevSetup()

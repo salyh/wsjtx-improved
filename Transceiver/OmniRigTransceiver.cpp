@@ -256,10 +256,10 @@ int OmniRigTransceiver::do_start ()
         }
       switch (rig_->GetRxFrequency () - test_frequency)
         {
-        case -5: resolution = -1; break;  // 10Hz truncated
+//        case -5: resolution = -1; break;  // 10Hz truncated
         case 5: resolution = 1; break;    // 10Hz rounded
-        case -15: resolution = -2; break; // 20Hz truncated
-        case -55: resolution = -2; break; // 100Hz truncated
+//        case -15: resolution = -2; break; // 20Hz truncated
+//        case -55: resolution = -2; break; // 100Hz truncated
         case 45: resolution = 2; break;   // 100Hz rounded
         }
       if (1 == resolution)  // may be 20Hz rounded
@@ -553,7 +553,11 @@ void OmniRigTransceiver::handle_params_change (int rig_number, int params)
       if (params & OmniRig::PM_VFOEQUAL)
         {
           auto f = readable_params_ & OmniRig::PM_FREQA ? rig_->FreqA () : rig_->Freq ();
+#if QT_VERSION > QT_VERSION_CHECK(6, 8, 2)
+          auto m = map_mode ((OmniRig::RigParamX)(rig_->Mode ()));
+#else
           auto m = map_mode (rig_->Mode ());
+#endif
           CAT_TRACE (QString {"VFOEQUAL f=%1 m=%2"}.arg (f).arg (m));
           update_rx_frequency (f);
           update_other_frequency (f);
@@ -565,7 +569,11 @@ void OmniRigTransceiver::handle_params_change (int rig_number, int params)
           auto f = state ().tx_frequency ();
           update_other_frequency (state ().frequency ());
           update_rx_frequency (f);
+#if QT_VERSION > QT_VERSION_CHECK(6, 8, 2)
+          update_mode (map_mode ((OmniRig::RigParamX)(rig_->Mode ())));
+#else
           update_mode (map_mode (rig_->Mode ()));
+#endif
         }
       if (params & OmniRig::PM_SPLITON)
         {

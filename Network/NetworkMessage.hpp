@@ -532,6 +532,7 @@
  */
 
 #include <QDataStream>
+#include <QIODevice>
 
 #include "pimpl_h.hpp"
 

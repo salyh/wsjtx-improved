@@ -47,6 +47,8 @@ private slots:
 #endif
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     void errorOccurred(QNetworkReply::NetworkError code);
+#else
+    void obsoleteError();
 #endif
 //signals:
      //void results(QString verify_response);

@@ -20,9 +20,9 @@ endif (APPLE)
 #
 # CMake policies
 #
-if (POLICY CMP0020)
-  cmake_policy (SET CMP0020 NEW) # link to Qt winmain on Windows
-endif ()
+# if (POLICY CMP0020)
+#   cmake_policy (SET CMP0020 NEW) # link to Qt winmain on Windows
+# endif ()
 
 if (POLICY CMP0043)
   cmake_policy (SET CMP0043 NEW) # ignore COMPILE_DEFINITIONS_<CONFIG>
@@ -52,25 +52,11 @@ set (PROJECT_DESCRIPTION "WSJT-X: Digital Modes for Weak Signal Communications i
 set (CMAKE_PROJECT_DESCRIPTION ${PROJECT_DESCRIPTION})
 set (CMAKE_AUTOUIC ON)
 
-# Align windres with the active MinGW gcc to prevent MSYS path mangling
-if(MINGW)
-  # Derive windres.exe from the C compiler's directory (Qt MinGW toolchain)
-  get_filename_component(_CC_DIR "${CMAKE_C_COMPILER}" DIRECTORY)
-  find_program(WINDRES_EXECUTABLE NAMES windres.exe windres PATHS "${_CC_DIR}" NO_DEFAULT_PATH)
-  if(NOT WINDRES_EXECUTABLE)
-    # Fallback to normal PATH if not found beside gcc
-    find_program(WINDRES_EXECUTABLE NAMES windres.exe windres)
-  endif()
-  if(NOT WINDRES_EXECUTABLE)
-    message(FATAL_ERROR "windres not found; ensure MinGW bin dir is on PATH")
-  endif()
+if(MINGW) # added for Qt6 compatibility
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wa,-mbig-obj>)
+    add_link_options(-Wa,-mbig-obj)
+endif()   
 
-  # Use MinGW windres directly; feed it forward-slash paths; avoid bash and MSYS gcc
-  set(CMAKE_RC_COMPILER "${WINDRES_EXECUTABLE}")
-  set(CMAKE_RC_COMPILE_OBJECT
-    "<CMAKE_COMMAND> -E env MSYS2_ARG_CONV_EXCL='*' \"<CMAKE_RC_COMPILER>\" -O coff <DEFINES> <INCLUDES> <FLAGS> \"<SOURCE>\" \"<OBJECT>\""
-  )
-endif()
 
 #
 # Local CMake modules and support files
@@ -118,8 +104,31 @@ if (CMAKE_BUILD_TYPE MATCHES "[Dd][Ee][Bb][Uu][Gg]")
   set (is_debug_build 1)
 endif ()
 
-#uncomment line below to test for Qt 5.15.2 and later deprecations
-#add_definitions(-DQT_DISABLE_DEPRECATED_BEFORE=0x050F00)
+# Define JTSDK tools root relative to the prefix path
+# Developers can override this if their JTSDK installation lives elsewhere
+# by using -DJTSDK_TOOLS_ROOT=/path/to/tools
+# Take the first entry from CMAKE_PREFIX_PATH and walk up until we hit "tools"
+if(WIN32)
+list(GET CMAKE_PREFIX_PATH 0 _first_prefix)
+file(TO_CMAKE_PATH "${_first_prefix}" _norm)
+
+set(JTSDK_TOOLS_ROOT "")
+set(_probe "${_norm}")
+while(_probe)
+  cmake_path(GET _probe FILENAME _leaf)
+  if (_leaf STREQUAL "tools")
+    set(JTSDK_TOOLS_ROOT "${_probe}")
+    break()
+  endif()
+  cmake_path(GET _probe PARENT_PATH _probe)
+endwhile()
+
+if (JTSDK_TOOLS_ROOT)
+  message(STATUS "Derived JTSDK_TOOLS_ROOT: ${JTSDK_TOOLS_ROOT}")
+else()
+  message(WARNING "Could not derive JTSDK_TOOLS_ROOT from CMAKE_PREFIX_PATH")
+endif()
+endif()
 
 #
 # Options & features
@@ -418,7 +427,7 @@ set (wsjt_FSRCS
   lib/bpdecode128_90.f90
   lib/ft8/bpdecode174_91.f90
   lib/baddata.f90
-  lib/cablog.f90
+#  lib/cablog.f90
   lib/calibrate.f90
   lib/ccf2.f90
   lib/ccf65.f90
@@ -446,7 +455,7 @@ set (wsjt_FSRCS
   lib/demod64a.f90
   lib/determ.f90
   lib/downsam9.f90
-  lib/echosim.f90
+#  lib/echosim.f90
   lib/echo_snr.f90
   lib/encode232.f90
   lib/encode4.f90
@@ -488,9 +497,9 @@ set (wsjt_FSRCS
   lib/freqcal.f90
   lib/ft8/ft8apset.f90
   lib/ft8/ft8b.f90
-  lib/ft8/ft8code.f90
+#  lib/ft8/ft8code.f90
   lib/ft8/ft8_downsample.f90
-  lib/ft8/ft8sim.f90
+#  lib/ft8/ft8sim.f90
   lib/gen4.f90
   lib/gen65.f90
   lib/gen9.f90
@@ -501,7 +510,7 @@ set (wsjt_FSRCS
   lib/qra/q65/genq65.f90
   lib/genmsk_128_90.f90
   lib/genmsk40.f90
-  lib/ft4/ft4code.f90
+#  lib/ft4/ft4code.f90
   lib/ft4/genft4.f90
   lib/ft4/gen_ft4wave.f90
   lib/ft8/gen_ft8wave.f90
@@ -549,12 +558,12 @@ set (wsjt_FSRCS
   lib/msk144_freq_search.f90
   lib/mskrtd.f90
   lib/msk144signalquality.f90
-  lib/msk144sim.f90
+#  lib/msk144sim.f90
   lib/mskrtd.f90
   lib/nuttal_window.f90
   lib/decode_msk144.f90
-  lib/ft4/ft4sim.f90
-  lib/ft4/ft4sim_mult.f90
+#  lib/ft4/ft4sim.f90
+#  lib/ft4/ft4sim_mult.f90
   lib/ft4/ft4_downsample.f90
   lib/77bit/my_hash.f90
   lib/wsprd/osdwspr.f90
@@ -611,7 +620,7 @@ set (wsjt_FSRCS
   lib/sync9.f90
   lib/sync9f.f90
   lib/sync9w.f90
-  lib/test_snr.f90
+#  lib/test_snr.f90
   lib/timf2.f90
   lib/tweak1.f90
   lib/twkfreq.f90
@@ -632,19 +641,19 @@ set (wsjt_FSRCS
   lib/fst4/decode240_74.f90
   lib/fst4/encode240_101.f90
   lib/fst4/encode240_74.f90
-  lib/fst4/fst4sim.f90
+#  lib/fst4/fst4sim.f90
   lib/fst4/gen_fst4wave.f90
   lib/fst4/genfst4.f90
   lib/fst4/get_fst4_bitmetrics.f90
   lib/fst4/get_fst4_bitmetrics2.f90
-  lib/fst4/ldpcsim240_101.f90
-  lib/fst4/ldpcsim240_74.f90
+#  lib/fst4/ldpcsim240_101.f90
+#  lib/fst4/ldpcsim240_74.f90
   lib/fst4/osd240_101.f90
   lib/fst4/osd240_74.f90
   lib/fst4/fastosd240_74.f90
   lib/fst4/get_crc24.f90
   lib/fst4/fst4_baseline.f90
-  lib/77bit/hash22calc.f90
+#  lib/77bit/hash22calc.f90
   lib/ft8var/agccft8.f90
   lib/ft8var/baddatavar.f90
   lib/ft8var/bpdecode174_91var.f90
@@ -690,7 +699,7 @@ set (wsjt_FSRCS
   lib/ft8var/tone8.f90
   lib/ft8var/tone8myc.f90
   lib/ft8var/tonesdvar.f90
-  lib/ft8var/twkfreq1var.f90  
+  lib/ft8var/twkfreq1var.f90
   lib/superfox/foxgen2.f90
   lib/superfox/qpc_decode2.f90
   lib/superfox/qpc_likelihoods2.f90
@@ -710,7 +719,7 @@ set (wsjt_FSRCS
   lib/superfox/twkfreq2.f90
   lib/superfox/sfox_gen_gfsk.f90
   lib/superfox/ran1.f90
-  lib/superfox/sfoxsim.f90
+#  lib/superfox/sfoxsim.f90
   )
 
 # temporary workaround for a gfortran v7.3 ICE on Fedora 27 64-bit
@@ -828,7 +837,7 @@ set (message_aggregator_CXXSRCS
   UDPExamples/BeaconsModel.cpp
   UDPExamples/ClientWidget.cpp
   validators/MaidenheadLocatorValidator.cpp
-  )
+ )
 
 set (message_aggregator_STYLESHEETS
   UDPExamples/qss/default.qss
@@ -878,7 +887,6 @@ set (PALETTE_FILES
   Palettes/Green2.pal
   Palettes/Jungle.pal
   Palettes/Linrad.pal
-  Palettes/W9MDB.pal
   Palettes/Negative.pal
   Palettes/Orange.pal
   Palettes/Pink.pal
@@ -919,11 +927,11 @@ endif (APPLE)
 set_source_files_properties (${WSJTX_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
 # suppress intransigent compiler diagnostics
-set_source_files_properties (lib/decoder.f90 PROPERTIES COMPILE_FLAGS "-Wno-unused-dummy-argument")
-set_source_files_properties (lib/filbig.f90 PROPERTIES COMPILE_FLAGS "-Wno-aliasing")
+set_source_files_properties (lib/decoder.f90 PROPERTIES COMPILE_FLAGS "-Wno-unused-dummy-argument -frecursive")
+set_source_files_properties (lib/filbig.f90 PROPERTIES COMPILE_FLAGS "-Wno-aliasing -frecursive")
 
 ## disable Qt trace and warning messages from release configurations
-# set_property (DIRECTORY APPEND PROPERTY
+#set_property (DIRECTORY APPEND PROPERTY
 #  COMPILE_DEFINITIONS $<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT>
 #  )
 
@@ -1015,7 +1023,7 @@ endif ()
 if (WIN32)
   set (Boost_USE_STATIC_LIBS OFF)
 endif ()
-find_package (Boost 1.62 REQUIRED COMPONENTS log_setup log)
+find_package (Boost 1.74 REQUIRED COMPONENTS log_setup log)
 
 #
 # OpenMP
@@ -1045,15 +1053,15 @@ if (WSJT_FOX_OTP)
 endif ()
 
 #
-# Qt5 setup
+# Qt6 setup
 #
 
 # Widgets finds its own dependencies.
-find_package (Qt5 COMPONENTS Widgets SerialPort Multimedia PrintSupport Sql LinguistTools WebSockets REQUIRED)
+find_package (Qt6 COMPONENTS Widgets SerialPort Multimedia PrintSupport Sql LinguistTools WebSockets REQUIRED)
 
 if (WIN32)
   add_definitions (-DQT_NEEDS_QTMAIN)
-  find_package (Qt5AxContainer REQUIRED)
+  find_package (Qt6 REQUIRED COMPONENTS AxContainer AxServer)
 endif (WIN32)
 
 #
@@ -1065,6 +1073,8 @@ set (CMAKE_C_VISIBILITY_PRESET hidden)
 set (CMAKE_Fortran_VISIBILITY_PRESET hidden)
 set (CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 #set (CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
+set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 #
@@ -1089,14 +1099,14 @@ if (NOT APPLE)
 endif (NOT APPLE)
 
 if (WIN32)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c++17 -std=gnu++17")
 endif (WIN32)
 
 if (APPLE AND ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -stdlib=libc++")
 else ()
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=gnu++11 -pthread")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=gnu++17 -pthread")
 endif ()
 
 
@@ -1119,13 +1129,7 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
   endif (CMAKE_OSX_SYSROOT)
 
-  # Add assembler flag to disable executable stack
-  if (UNIX AND NOT APPLE AND Fortran_COMPILER_NAME MATCHES "gfortran.*")
-     set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wa,--noexecstack")
-  endif()
-
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -fbounds-check -funroll-all-loops -fno-f2c -ffpe-summary=invalid,zero,overflow,underflow ${General_FFLAGS}")
-
   set (CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -ggdb -O0 -fbacktrace -fcheck=all -fbounds-check -fno-f2c -ffpe-summary=invalid,zero,overflow,underflow ${General_FFLAGS}")
 
   # FPE traps currently disabled in Debug configuration builds until
@@ -1137,6 +1141,7 @@ elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
   # ifort (untested)
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -f77rtl ${General_FFLAGS}")
   set (CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -f77rtl ${General_FFLAGS}")
+
 elseif (Fortran_COMPILER_NAME MATCHES "g77")
   # g77
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -funroll-all-loops -fno-f2c -m32 ${General_FFLAGS}")
@@ -1149,6 +1154,7 @@ else()
   set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -O3 ${General_FFLAGS}")
   set (CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -g -fbacktrace -fcheck=all -fbounds-check ${General_FFLAGS}")
 endif()
+
 
 #
 # Linker setup
@@ -1209,8 +1215,8 @@ endif ()
 #
 # stuff only qmake can tell us
 #
-get_target_property (QMAKE_EXECUTABLE Qt5::qmake LOCATION)
-get_target_property (LCONVERT_EXECUTABLE Qt5::lconvert LOCATION)
+get_target_property (QMAKE_EXECUTABLE Qt6::qmake LOCATION)
+get_target_property (LCONVERT_EXECUTABLE Qt6::lconvert LOCATION)
 function (QUERY_QMAKE VAR RESULT)
   exec_program (${QMAKE_EXECUTABLE} ARGS "-query ${VAR}" RETURN_VALUE return_code OUTPUT_VARIABLE output)
   if (NOT return_code)
@@ -1227,7 +1233,7 @@ query_qmake (QT_HOST_DATA QT_DATA_DIR)
 set (QT_MKSPECS_DIR ${QT_DATA_DIR}/mkspecs)
 
 # project definitions
-add_definitions (-DQT5 -DCMAKE_BUILD -DBIGSYM=1 -DBOOST_ALL_DYN_LINK)
+add_definitions (-DQT6 -DCMAKE_BUILD -DBIGSYM=1 -DBOOST_ALL_DYN_LINK)
 if (CMAKE_HOST_UNIX)
   add_definitions (-DUNIX)
 elseif (CMAKE_HOST_WIN32)
@@ -1254,9 +1260,29 @@ target_link_libraries (wsjt_cxx ${LIBM_LIBRARIES} Boost::log_setup ${LIBM_LIBRAR
 # build an OpenMP variant of the Fortran library routines
 add_library (wsjt_fort STATIC ${wsjt_FSRCS})
 target_link_libraries (wsjt_fort  ${FFTW3_LIBRARIES})
+
+#solve noexec problem with some linux versions
+if (UNIX AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_compile_options(wsjt_fort PRIVATE
+  	$<$<COMPILE_LANGUAGE:Fortran>:-Xassembler>
+    $<$<COMPILE_LANGUAGE:Fortran>:--noexecstack>
+  )
+  target_link_options(wsjt_fort PRIVATE -Wl,-z,noexecstack)
+endif()
+
 if (${OPENMP_FOUND} OR APPLE)
   add_library (wsjt_fort_omp STATIC ${wsjt_FSRCS})
   target_link_libraries (wsjt_fort_omp  ${FFTW3_LIBRARIES})
+  
+  #solve noexec problem with some linux versions
+  if (UNIX AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_compile_options(wsjt_fort_omp PRIVATE
+  	$<$<COMPILE_LANGUAGE:Fortran>:-Xassembler>
+    $<$<COMPILE_LANGUAGE:Fortran>:--noexecstack>
+    )
+    target_link_options(wsjt_fort_omp PRIVATE -Wl,-z,noexecstack)
+  endif()
+  
   if (OpenMP_C_FLAGS AND NOT APPLE)
     set_target_properties (wsjt_fort_omp
       PROPERTIES
@@ -1408,23 +1434,8 @@ generate_version_info (wsprd_VERSION_RESOURCES
   BUNDLE ${PROJECT_BUNDLE_NAME}
   ICON ${WSJTX_ICON_FILE}
   FILE_DESCRIPTION "WSPR mode decoder"
-)
-# message(STATUS "RC compiler: ${CMAKE_RC_COMPILER}")
-#  message(STATUS "RC rule: ${CMAKE_RC_COMPILE_OBJECT}")
-#  message(STATUS "wsprd_VERSION_RESOURCES: ${wsprd_VERSION_RESOURCES}")
-
-add_executable(wsprd
-  ${wsprd_CSRCS}
-  lib/indexx.f90
-  lib/wsprd/osdwspr.f90
-)
-
-if(WIN32)
-  # Attach the generated rc file; the RC rule above will compile it
-  target_sources(wsprd PRIVATE ${wsprd_VERSION_RESOURCES})
-endif()
-
-
+  )
+add_executable (wsprd ${wsprd_CSRCS} lib/indexx.f90 lib/wsprd/osdwspr.f90 ${wsprd_VERSION_RESOURCES})
 target_include_directories (wsprd PRIVATE ${FFTW3_INCLUDE_DIRS})
 target_link_libraries (wsprd ${FFTW3_LIBRARIES} ${LIBM_LIBRARIES})
 
@@ -1488,13 +1499,13 @@ foreach (lang_ ${LANGUAGES})
 endforeach ()
 if (UPDATE_TRANSLATIONS)
   message (STATUS "UPDATE_TRANSLATIONS option is set.")
-  qt5_create_translation (
+  qt6_create_translation (
     QM_FILES ${wsjt_qt_UISRCS} ${wsjtx_UISRCS} ${wsjt_qt_CXXSRCS} ${wsjtx_CXXSRCS}
     ${TS_FILES}
     OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}
     )
 else ()
-  qt5_add_translation (QM_FILES ${TS_FILES})
+  qt6_add_translation (QM_FILES ${TS_FILES})
 endif ()
 add_custom_target (translations DEPENDS ${QM_FILES})
 set_property (DIRECTORY PROPERTY CLEAN_NO_CUSTOM TRUE)
@@ -1521,11 +1532,11 @@ add_resources (wsjtx_RESOURCES /Translations ${QM_FILES})
 configure_file (wsjtx.qrc.in wsjtx.qrc @ONLY)
 
 # UI generation
-qt5_wrap_ui (wsjt_qt_GENUISRCS ${wsjt_qt_UISRCS})
-qt5_wrap_ui (wsjtx_GENUISRCS ${wsjtx_UISRCS})
+qt6_wrap_ui (wsjt_qt_GENUISRCS ${wsjt_qt_UISRCS})
+qt6_wrap_ui (wsjtx_GENUISRCS ${wsjtx_UISRCS})
 
 # Resource generation
-qt5_add_resources (wsjtx_RESOURCES_RCC
+qt6_add_resources (wsjtx_RESOURCES_RCC
   ${CMAKE_BINARY_DIR}/wsjtx.qrc
   contrib/QDarkStyleSheet/qdarkstyle/style.qrc
   )
@@ -1543,24 +1554,25 @@ endif (WIN32)
 # build a library for the QCustomPlot widget
 add_library (qcp STATIC ${qcp_CXXSRCS})
 target_include_directories (qcp PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot-source>)
-target_link_libraries (qcp Qt5::Widgets Qt5::PrintSupport)
+target_link_libraries (qcp Qt6::Widgets Qt6::PrintSupport)
 
 # build a library of package Qt functionality
 add_library (wsjt_qt STATIC ${wsjt_qt_CXXSRCS} ${wsjt_qt_GENUISRCS} ${GENAXSRCS})
 # set wsjtx_udp exports to static variants
 target_compile_definitions (wsjt_qt PUBLIC UDP_STATIC_DEFINE)
-target_link_libraries (wsjt_qt Hamlib::Hamlib Boost::log qcp Qt5::Widgets Qt5::Network Qt5::Sql Qt5::WebSockets)
+target_link_libraries (wsjt_qt Hamlib::Hamlib Boost::log qcp Qt6::Widgets Qt6::Network Qt6::Sql Qt6::WebSockets)
 if (WIN32)
-  target_link_libraries (wsjt_qt Qt5::AxContainer Qt5::AxBase)
+  target_link_libraries(wsjt_qt Qt6::AxContainer Qt6::AxServer)
+#  target_link_libraries (wsjt_qt QAxContainer QAxBase)
 endif (WIN32)
 
 # build a library of package Qt functionality used in Fortran utilities
 add_library (fort_qt STATIC ${fort_qt_CXXSRCS})
-target_link_libraries (fort_qt Qt5::Core)
+target_link_libraries (fort_qt Qt6::Core)
 
 # build a library of WSJT Qt multimedia components
 add_library (wsjt_qtmm STATIC ${wsjt_qtmm_CXXSRCS} ${wsjt_qtmm_GENUISRCS})
-target_link_libraries (wsjt_qtmm Qt5::Multimedia)
+target_link_libraries (wsjt_qtmm Qt6::Multimedia)
 
 # build the jt9 slow mode decoder driver
 generate_version_info (jt9_VERSION_RESOURCES
@@ -1606,14 +1618,23 @@ if (${OPENMP_FOUND} OR APPLE)
       LINK_FLAGS -Wl,--stack,16777216
       )
   endif ()
+ 
+  # Linux-specific hardening
+  if (UNIX AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_options(jt9 PRIVATE -Wl,-z,noexecstack)
+  endif () 
+  
   target_link_libraries (jt9 wsjt_fort_omp wsjt_cxx fort_qt)
 else (${OPENMP_FOUND} OR APPLE)
   target_link_libraries (jt9 wsjt_fort wsjt_cxx fort_qt)
+  if (UNIX AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_options(jt9 PRIVATE -Wl,-z,noexecstack)
+  endif ()
 endif (${OPENMP_FOUND} OR APPLE)
 
 if (WIN32)
   find_package (Portaudio REQUIRED)
-  add_subdirectory (map65)
+  add_subdirectory (map65)  # map65 code not yet ready for Qt6
 endif ()
   add_subdirectory (qmap)
 
@@ -1669,7 +1690,7 @@ else ()
       )
   endif ()
 endif ()
-target_link_libraries (wsjtx Qt5::SerialPort wsjt_cxx wsjt_qt wsjt_qtmm ${FFTW3_LIBRARIES} ${LIBM_LIBRARIES})
+target_link_libraries (wsjtx Qt6::SerialPort wsjt_cxx wsjt_qt wsjt_qtmm ${FFTW3_LIBRARIES} ${LIBM_LIBRARIES})
 
 # make a library for WSJT-X UDP servers
 # add_library (wsjtx_udp SHARED ${UDP_library_CXXSRCS})
@@ -1689,7 +1710,7 @@ set_target_properties (wsjtx_udp-static PROPERTIES
   OUTPUT_NAME wsjtx_udp
   )
 target_compile_definitions (wsjtx_udp-static PUBLIC UDP_STATIC_DEFINE)
-target_link_libraries (wsjtx_udp-static Qt5::Network Qt5::Gui)
+target_link_libraries (wsjtx_udp-static Qt6::Network Qt6::Gui)
 generate_export_header (wsjtx_udp-static BASE_NAME udp)
 
 generate_version_info (udp_daemon_VERSION_RESOURCES
@@ -1718,7 +1739,7 @@ generate_version_info (message_aggregator_VERSION_RESOURCES
   )
 add_resources (message_aggregator_RESOURCES /qss ${message_aggregator_STYLESHEETS})
 configure_file (UDPExamples/message_aggregator.qrc.in message_aggregator.qrc @ONLY)
-qt5_add_resources (message_aggregator_RESOURCES_RCC
+qt6_add_resources (message_aggregator_RESOURCES_RCC
   ${CMAKE_CURRENT_BINARY_DIR}/message_aggregator.qrc
   contrib/QDarkStyleSheet/qdarkstyle/style.qrc
   )
@@ -1727,7 +1748,7 @@ add_executable (message_aggregator
   ${message_aggregator_RESOURCES_RCC}
   ${message_aggregator_VERSION_RESOURCES}
   )
-target_link_libraries (message_aggregator wsjt_qt Qt5::Widgets wsjtx_udp-static)
+target_link_libraries (message_aggregator wsjt_qt Qt6::Widgets wsjtx_udp-static)
 
 if (WSJT_CREATE_WINMAIN)
   set_target_properties (message_aggregator PROPERTIES WIN32_EXECUTABLE ON)
@@ -1769,7 +1790,8 @@ install (TARGETS wsjtx
 #   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/wsjtx
 #   )
 
-install (TARGETS udp_daemon message_aggregator wsjtx_app_version
+#install (TARGETS udp_daemon message_aggregator wsjtx_app_version
+install (TARGETS udp_daemon wsjtx_app_version
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime
   BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime
   )
@@ -1781,7 +1803,7 @@ install (TARGETS jt9 wsprd fmtave fcal fmeasure
 
 if(WSJT_BUILD_UTILS)
 install (TARGETS ft8code jt65code jt9code jt4code msk144code 
-  q65code fst4sim ft8sim q65sim EchoCallSim testEchoCall echosim hash22calc cablog
+  q65code fst4sim q65sim EchoCallSim testEchoCall echosim hash22calc cablog
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime
   BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime
   )
@@ -1824,8 +1846,8 @@ install (FILES
   cty.dat_copyright.txt
   grid.dat
   sat.dat
-  contrib/Ephemeris/JPLEPH
   eclipse.txt
+  contrib/Ephemeris/JPLEPH
   DESTINATION ${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}
   #COMPONENT runtime
   )
@@ -1850,11 +1872,8 @@ install (DIRECTORY
   )
 
 if (WIN32)
-  install (FILES
-    contrib/tls/libssl-1_1.dll
-    contrib/tls/libcrypto-1_1.dll
-    contrib/tls/libssl-1_1-x64.dll
-    contrib/tls/libcrypto-1_1-x64.dll
+  install (DIRECTORY
+    ${QT_PLUGINS_DIR}/tls
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     #COMPONENT runtime
   )
@@ -1864,12 +1883,12 @@ endif (WIN32)
 # Mac installer files
 #
 if (APPLE)
-    install (FILES
-        Darwin/ReadMe.txt
-        Darwin/com.wsjtx.sysctl.plist
-        DESTINATION .
-        #COMPONENT runtime
-    )
+  install (FILES
+    Darwin/ReadMe.txt
+    Darwin/com.wsjtx.sysctl.plist
+    DESTINATION .
+    #COMPONENT runtime
+  )
 endif (APPLE)
 
 #
@@ -1916,6 +1935,7 @@ if (NOT WIN32 AND NOT APPLE)
   # menu with an icon
   install (
     FILES wsjtx.desktop message_aggregator.desktop
+    FILES wsjtx.desktop
     DESTINATION share/applications
     #COMPONENT runtime
     )
@@ -1991,11 +2011,11 @@ else ()
 endif ()
 
 set (CPACK_DEBIAN_PACKAGE_HOMEPAGE "${PROJECT_HOMEPAGE}")
-set (CPACK_DEBIAN_PACKAGE_DEPENDS "libgfortran5 (>=8.3) | libgfortran4 (>=7.3) | libgfortran3 (>=6.3), libfftw3-single3 (>=3.3), libgomp1 (>=6), libqt5serialport5 (>=5.7), libqt5multimedia5-plugins (>=5.7), libqt5widgets5 (>=5.7), libqt5network5 (>=5.7), libqt5printsupport5 (>=5.7), libqt5websockets5 (>=5.7),  libqt5sql5-sqlite (>=5.7), libusb-1.0-0 (>=1.0.21), libboost-log1.62.0 (>=1.62.0) | libboost-log1.65.1 (>=1.65.1) | libboost-log1.67.0 (>=1.67.0) | libboost-log1.71.0 (>=1.71.0) | libboost-log1.74.0 (>=1.74.0) | libboost-log1.81.0 (>=1.81.0) | libboost-log1.83.0 (>=1.83.0) | libboost-log1.85.0 (>=1.85.0)")
+set (CPACK_DEBIAN_PACKAGE_DEPENDS "libgfortran5 (>=8.3) | libgfortran4 (>=7.3) | libgfortran3 (>=6.3), libfftw3-single3 (>=3.3), libgomp1 (>=6), libqt6serialport5 (>=5.7), libqt6multimedia5-plugins (>=5.7), libqt6widgets5 (>=5.7), libqt6network5 (>=5.7), libqt6printsupport5 (>=5.7), libqt6websockets5 (>=5.7),, libqt6sql5-sqlite (>=5.7), libusb-1.0-0 (>=1.0.21), libboost-log1.74.0 (>=1.74.0) | libboost-log1.75.0 (>=1.74.0) | libboost-libboost-log1.76.0 (>=1.74.0) | libboost-log1.77.0 (>=1.77.0) | libboost-log1.78.0 (>=1.78.0) | libboost-log1.79.0 (>=1.79.0) | libboost-log1.81.0 (>=1.81.0) | libboost-log1.83.0 (>=1.83.0) | libboost-log1.85.0 (>=1.85.0)")
 set (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
 set (CPACK_RPM_PACKAGE_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
-set (CPACK_RPM_PACKAGE_REQUIRES "qt5-qtbase >= 5.9, qt5-qtserialport >= 5.9, qt5-qtmultimedia >= 5.9, qt5-qtwebsockets >= 5.9, qt5-qtsvg >= 5.9, libusbx >= 1.0.22, libgfortran >= 7, libgomp >= 7, fftw-libs-single >= 3.3, boost-log >= 1.62")
+set (CPACK_RPM_PACKAGE_REQUIRES "qt6-qtbase >= 5.9, qt6-qtserialport >= 5.9, qt6-qtmultimedia >= 5.9, qt6-qtwebsockets >= 5.9, qt6-qtmultimedia >= 5.9, qt6-qtsvg >= 5.9, libusbx >= 1.0.22, libgfortran >= 7, libgomp >= 7, fftw-libs-single >= 3.3, boost-log >= 1.74")
 set (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/share/pixmaps /usr/share/applications /usr/share/man /usr/share/man1)
 
 configure_file ("${PROJECT_SOURCE_DIR}/CMakeCPackOptions.cmake.in"

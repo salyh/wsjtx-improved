@@ -7,7 +7,7 @@
 #endif
 #include <QDebug>
 #include "widgets/itoneAndicw.h"  //w3sz tci
-//#include "widgets/mainwindow.h" // TODO: G4WJS - break this dependency //w3sz tci
+// #include "widgets/mainwindow.h" // TODO: G4WJS - break this dependency
 #include "Audio/soundout.h"
 #include "commons.h"
 

@@ -8,7 +8,6 @@
 #include <locale>
 #include <fftw3.h>
 
-#include <QApplication>
 #include <QSharedMemory>
 #include <QProcessEnvironment>
 #include <QTemporaryFile>
@@ -34,6 +33,7 @@
 #include <QByteArray>
 #include <QBitArray>
 #include <QMetaType>
+#include <QSequentialIterable>
 
 #include "ExceptionCatchingApplication.hpp"
 #include "Logger.hpp"
@@ -74,7 +74,7 @@ namespace
 
   void safe_stream_QVariant (boost::log::record_ostream& os, QVariant const& v)
   {
-    switch (static_cast<QMetaType::Type> (v.type ()))
+    switch (static_cast<QMetaType::Type> (v.typeId ()))
       {
       case QMetaType::QByteArray:
         os << "0x"
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 
   // Read optional file to disable highDPI scaling
   QFile f("DisableHighDpiScaling");
-  if (!f.exists()) QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  if (f.exists()) qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
 
   auto const env = QProcessEnvironment::systemEnvironment ();
 
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
       }
 
       // create writeable data directory if not already there
-      auto writeable_data_dir = QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)};
+      auto writeable_data_dir = QDir {QStandardPaths::writableLocation (QStandardPaths::AppLocalDataLocation)};
       if (!writeable_data_dir.mkpath ("."))
         {
           MessageBox::critical_message (nullptr, a.translate ("main", "Failed to create data directory"),
@@ -329,7 +329,8 @@ int main(int argc, char *argv[])
       // on system crash or application crash
       // db.exec ("PRAGMA synchronous=OFF"); // system crash risk
       // db.exec ("PRAGMA journal_mode=MEMORY"); // application crash risk
-      db.exec ("PRAGMA locking_mode=EXCLUSIVE");
+      // db.exec ("PRAGMA locking_mode=EXCLUSIVE");              // URUR not compatible with Qt 6.6.0
+      QSqlQuery exec ("PRAGMA locking_mode=EXCLUSIVE");
 
       int result;
       auto const& original_style_sheet = a.styleSheet ();
@@ -351,14 +352,10 @@ int main(int argc, char *argv[])
                       auto const& value = multi_settings.settings ()->value (key);
                       if (value.canConvert<QVariantList> ())
                         {
-                          auto const sequence = value.value<QSequentialIterable> ();
-                          strm << key << ":\n";
-                          for (auto const& item: sequence)
-                            {
+                          strm << key << ":";
                               strm << "\t";
-                              safe_stream_QVariant (strm, item);
+                              safe_stream_QVariant (strm, value);
                               strm << '\n';
-                            }
                         }
                       else
                         {
@@ -423,19 +420,13 @@ int main(int argc, char *argv[])
 
             // deal with Windows Vista and earlier input audio rate
             // converter problems
-            downSampleFactor = multi_settings.settings()->value(
-                "Audio/DisableInputResampling",
+            downSampleFactor = multi_settings.settings ()->value ("Audio/DisableInputResampling",
 #if defined (Q_OS_WIN)
-                                                                  // default to true for
-                (QOperatingSystemVersion::current() <
-                 QOperatingSystemVersion(QOperatingSystemVersion::Windows, 6))
-                    ? true
-                    : false
+                                                                  false
 #else
                                                                   false
 #endif
                                                                   ).toBool () ? 1u : 4u;
-
           }
 
           QDir::setCurrent(qApp->applicationDirPath()); //This helps to find the SF executables

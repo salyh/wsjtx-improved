@@ -394,7 +394,7 @@ subroutine packbits(dbits,nsymd,m0,sym)
 
  ! itype Message Type
  !--------------------
- !   1   Standardd message
+ !   1   Standard message
  !   2   Type 1 prefix
  !   3   Type 1 suffix
  !   4   Type 2 prefix

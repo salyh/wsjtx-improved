@@ -53,7 +53,11 @@ subroutine q65b(nutc,nqd,nxant,fcenter,nfcal,nfsample,ikhz,mousedf,ntol,xpol, &
   ifreq=nint((1000.0*f0)/df3)
   ia=nint(ifreq-ntol/df3)
   ib=nint(ifreq+ntol/df3)
+  if (ia >= 1 .and. ia <= 32768 .and. ib >= 1 .and. ib <= 32768) then !if added qt6
   ipk1=maxloc(sync(ia:ib)%ccfmax)
+  else 
+    go to 901
+  endif    
   ipk=ia+ipk1(1)-1
   if(ldecoded(ipk)) go to 900
   snr1=sync(ipk)%ccfmax
@@ -200,6 +204,10 @@ subroutine q65b(nutc,nqd,nxant,fcenter,nfcal,nfsample,ikhz,mousedf,ntol,xpol, &
   call flush(6)
   idec=-1
   read(cq0(2:2),*) idec
-
+  return
+901 close(13)
+  close(17)
+  call flush(6)
+  idec=-1
   return
 end subroutine q65b

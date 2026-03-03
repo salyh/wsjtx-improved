@@ -115,9 +115,17 @@ int killbyname(const char *szToTerminate)
                         aiPID[i]);
       // Now, get the process name
       if(hProc) {
-        if(lpfEnumProcessModules(hProc,&hMod,sizeof(hMod),&iCbneeded) ) {
-          lpfGetModuleBaseName(hProc,hMod,szName,MAX_PATH);
-        }
+        typedef DWORD (WINAPI *GetModuleBaseNameA_t)(HANDLE, HMODULE, LPSTR, DWORD);
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wcast-function-type"
+        GetModuleBaseNameA_t lpfGetModuleBaseNameA = (GetModuleBaseNameA_t) GetProcAddress(
+            GetModuleHandle(TEXT("psapi.dll")), "GetModuleBaseNameA"
+        );
+        #pragma GCC diagnostic pop   
+
+        if (lpfGetModuleBaseNameA && lpfEnumProcessModules(hProc, &hMod, sizeof(hMod), &iCbneeded)) {
+            lpfGetModuleBaseNameA(hProc, hMod, szName, MAX_PATH);
+        }   
       }
       CloseHandle(hProc);
       // We will match regardless of lower or upper case
@@ -222,7 +230,9 @@ int killbyname(const char *szToTerminate)
       // While there are modules, keep looping and checking
       while(bResultm)
       {
-        if(strcmp(modentry.szModule,szToTermUpper)==0)
+        WCHAR szToTermUpperW[MAX_PATH];
+        MultiByteToWideChar(CP_UTF8, 0, szToTermUpper, -1, szToTermUpperW, MAX_PATH);
+        if (wcscmp(modentry.szModule, szToTermUpperW) == 0)   
         {
           // Process found, now terminate it
           iFound=1;

@@ -8,7 +8,7 @@
 
 #include <QTimer>
 #include <QFile>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QRegularExpression>
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
@@ -187,7 +187,7 @@ void WSPRNet::networkReply (QNetworkReply * reply)
           QString serverResponse = reply->readAll ();
           if (m_uploadType == 2)
             {
-              if (!serverResponse.contains(QRegExp("spot\\(s\\) added")))
+              if (!serverResponse.contains(QRegularExpression("spot\\(s\\) added")))
                 {
                   Q_EMIT uploadStatus (QString {"Upload Failed: %1"}.arg (serverResponse));
                   spot_queue_.clear ();
