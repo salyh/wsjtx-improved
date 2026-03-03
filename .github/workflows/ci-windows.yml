@@ -1,0 +1,126 @@
+name: CI Build for Windows 10+ x64
+
+on: 
+  workflow_dispatch:
+  push:
+
+jobs:
+  build_windows-2025:
+    runs-on: windows-2025
+    permissions: write-all
+   
+    steps:
+    - run: git config --global core.autocrlf input
+    - uses: actions/checkout@v5
+
+    - name: Download and extract OmniRig
+      run: |
+        # Download the zip file
+        Invoke-WebRequest -Uri "http://dxatlas.com/OmniRig/Files/OmniRig.zip" -OutFile "OmniRig.zip"
+        
+        # Extract the zip
+        Expand-Archive -Path "OmniRig.zip" -DestinationPath "installer" -Force
+      shell: pwsh
+
+    - uses: msys2/setup-msys2@v2
+      id: msys2
+      with:
+        update: true
+        cache: true
+        install: >-
+          git python base-devel make unzip zip tar mingw-w64-x86_64-gcc-fortran 
+        # mingw-w64-x86_64-qt6-activeqt
+        pacboy: >-
+          toolchain:p
+          autotools:p
+          cmake:p
+          ninja:p
+          libusb:p
+          wget:p
+          boost:p
+          fftw:p
+          sqlite3:p
+          nsis:p
+          python:p
+    - env:
+        MSYS2_LOCATION: ${{ steps.msys2.outputs.msys2-location }}
+      run: echo "$env:MSYS2_LOCATION"
+
+    - name: Setup build directory
+      shell: msys2 {0}
+      run: mkdir -p build
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.9.3'
+        target: 'desktop'
+        arch: 'win64_mingw'
+        modules: 'qtmultimedia qtserialport qtprintsupport qtwebsockets qtsql qtaxcontainer qtaxserver'
+        cache: true
+        dir: 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/qt693'
+        # find_package (Qt6 COMPONENTS Widgets SerialPort Multimedia PrintSupport Sql LinguistTools WebSockets REQUIRED)
+    - name: hamlib/hamlib release
+      uses: robinraju/release-downloader@v1.12
+      with:
+        repository: 'hamlib/hamlib'
+        fileName: 'hamlib-w64-4.6.5.zip'
+        tag: '4.6.5'
+        extract: true
+        out-file-path: 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/hamlib465-tmp'
+
+    - name: Move hamlib directory to the right spot
+      shell: msys2 {0}
+      run: |
+        mv 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/hamlib465-tmp/hamlib-w64-4.6.5' 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/hamlib'
+        mv 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/hamlib/lib/gcc/libhamlib.dll.a' 'D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/hamlib/lib/libhamlib.dll.a'
+
+
+    - name: Install OmniRig
+      run: |        
+        $cmd = ".\installer\OmniRigSetup.exe /S /silent /quiet"
+        $exitCode = Invoke-Command -ScriptBlock { cmd /c $cmd *> $null; return $LASTEXITCODE }
+        
+        if ($exitCode -ne 0) {
+        Write-Host "*** Error: Installer returned exit code $exitCode ***"
+        exit 1
+        } else {
+        Write-Host "  --> OmniRig Installation Completed."
+        }
+
+
+        # Verify installation
+        $pathTest = "$env:PROGRAMFILES (x86)\Afreet\Omnirig\omnirig.exe"
+        if (Test-Path $pathTest) {
+        Write-Host "  --> OmniRig Installer indicated successful deployment"
+        } else {
+        Write-Host "*** Install failed. Expected file not found at: $pathTest ***"
+        exit 1
+        }
+      shell: pwsh
+
+    - name: Configure
+      shell: msys2 {0}
+      run: |
+
+        find D:/a/salyh -iname '*dumpcpp*'
+        find D:/a/_temp/msys64 -iname '*dumpcpp*'
+        
+      
+        cd ./build
+        cmake -DCMAKE_PREFIX_PATH='D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/hamlib;D:/a/salyh/wsjt-wsjtx-2m-buildtest/local/qt693/Qt/6.9.3/mingw_64' ..
+
+
+    - name: Build
+      shell: msys2 {0}
+      run: |
+        cd ./build
+        cmake --build .
+        cmake --build . --target install
+
+    #- name: Move exe into install directory
+    #  shell: msys2 {0}
+    #  run: |
+    #    cp ./build/JS8Call.exe ./build/JS8Call/
+
+    #
